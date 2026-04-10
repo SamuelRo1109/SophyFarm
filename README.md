@@ -68,6 +68,27 @@ Todos los microservicios se conectan a una base de datos PostgreSQL centralizada
 
 ---
 
+## Estructura del proyecto
+
+```
+SophyFarm/
+├── co.edu.unbosque.assets/       → Recursos estáticos (imágenes, estilos, JS)
+├── co.edu.unbosque.config/       → Configuración de base de datos y variables de entorno
+├── co.edu.unbosque.controller/   → Controladores de cada microservicio (lógica HTTP)
+├── co.edu.unbosque.middleware/   → Middlewares de autenticación JWT y validación de roles
+├── co.edu.unbosque.model/        → Modelos y entidades de la base de datos
+├── co.edu.unbosque.report/       → Generación de reportes PDF con FPDF
+├── co.edu.unbosque.service/      → Lógica de negocio de cada microservicio
+├── co.edu.unbosque.utils/        → Funciones utilitarias y helpers
+├── co.edu.unbosque.views/        → Vistas HTML del frontend
+├── docs/                         → Manuales de usuario e instalación
+├── screenshots/                  → Capturas del sistema en funcionamiento
+├── vendor/                       → Dependencias externas (Composer)
+├── index.php                     → Punto de entrada de la aplicación
+├── composer.json                 → Gestión de dependencias PHP
+└── README.md                     → Documentación del proyecto
+```
+
 ## Roles de usuario
 
 | Rol | Acceso |
