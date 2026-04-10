@@ -1,0 +1,176 @@
+--------------------------------------------------------------
+MANUAL DE USUARIO: Sistema de Gestión de Cotizaciones y Pedidos para SOPHYFARM
+--------------------------------------------------------------
+
+
+1. Objetivo General
+
+Este manual tiene como objetivo guiar a los usuarios del Sistema de Gestión de Cotizaciones y Pedidos de SOPHYFARM, que facilita el proceso de creación, seguimiento y gestión de cotizaciones y pedidos, permitiendo a los vendedores y administradores realizar tareas comerciales de manera eficiente, cumpliendo con las normativas internas de la empresa.
+
+2. ¿Qué es el Sistema de Gestión de Cotizaciones y Pedidos?
+
+El sistema de gestión de cotizaciones y pedidos es una herramienta digital que optimiza y automatiza el proceso de cotización, creación y seguimiento de pedidos para la cadena de droguerías SOPHYFARM. Este sistema permite a los vendedores generar cotizaciones personalizadas para los clientes, convertir esas cotizaciones en pedidos, y realizar un seguimiento detallado del estado de cada uno.
+
+Está basado en una arquitectura de microservicios, lo que permite un alto grado de escalabilidad, seguridad y rendimiento. Cada microservicio se encarga de una parte específica del proceso (como la cotización, el pedido, los clientes, y las notificaciones), y se comunica entre sí a través de APIs REST.
+
+Está dividido en módulos para simplificar el uso según el rol del usuario y el proceso que desea realizar.
+
+2. Configuración de la Base de Datos
+Asegúrate de tener una base de datos PostgreSQL en funcionamiento y configura los parámetros de conexión en el archivo DbConfig.php:
+
+define('DB_HOST', '192.168.1.12');
+define('DB_NAME', 'sophyfarm');
+define('DB_USER', 'postgres');
+define('DB_PASS', '1234');
+
+3. Estructura del Proyecto
+
+El sistema está organizado en varios módulos que interactúan entre sí. A continuación, te mostramos los componentes principales:
+
+	-Cotización Microservicio: Gestiona la creación, edición y eliminación de cotizaciones.
+
+	-Pedido Microservicio: Permite convertir cotizaciones en pedidos y gestionar los estados de los mismos.
+
+	-Cliente Microservicio: Gestiona la información de los clientes y su relación con cotizaciones y pedidos.
+
+	-Producto Microservicio: Proporciona los productos disponibles para cotizar y vender.
+
+	-Autenticación y Autorización: Controla el acceso al sistema, asegurando que solo los usuarios con los roles adecuados (Administrador, Vendedor) puedan realizar ciertas acciones.
+
+	-Notificación Microservicio: Envía notificaciones por correo electrónico o WhatsApp cuando se realiza una acción importante, como la confirmación de un pedido.
+
+Los microservicios se comunican entre sí usando API REST y están conectados a una base de datos PostgreSQL que almacena toda la información relevante del sistema.
+
+
+4. Ejecución de la Aplicación
+
+Para ejecutar el sistema y acceder a la interfaz web, asegúrate de que los microservicios estén activos y funcionando correctamente. El sistema estará disponible en la siguiente URL:
+http://localhost/proyectoFinalIS2/co.edu.unbosque.views/login.html
+
+4.1. Requisitos del Sistema
+
+Servidor web: XAMPP Control Panel v3.3.0 con la carpeta htdpcs. Aquí se habilitaron los módulos de Apache y MySQL para poder activar el servicio local. 
+
+Base de Datos: PostgreSQL para almacenamiento de datos.
+
+Herramientas de Comunicación: DBeaver para la administración de la base de datos PostgreSQL.
+
+Generador de Reportes: FPDF para la generación de reportes PDF.
+
+Autenticación: JWT (JSON Web Tokens) para la autenticación y control de acceso.
+
+-Visual Studio Code con las siguientes extensiones de PHP: 
+
+	-PHP IntelliSense 
+
+	-PHP Server  
+
+	-SQLTools  
+
+5. Perfiles de Usuario
+
+5. Perfiles de Usuario
+5.1. Roles y Funciones
+
+Administrador (Usuario: Admin, Contraseña: Admin123)
+
+-Gestiona la información de los clientes, cotizaciones y pedidos.
+-Puede generar reportes sobre el desempeño de ventas, productos más vendidos, y estadísticas de clientes.
+-Control total sobre todos los microservicios y funcionalidades.
+
+Vendedor (Usuario: Vendedor, Contraseña: Vendedor123)
+
+-Crea, edita y consulta cotizaciones y pedidos.
+-Accede a la información de los clientes asignados.
+-Genera y sigue el estado de las cotizaciones y pedidos en tiempo real.
+
+Cliente (SOLO VISUALZACIÓN)
+
+-Consulta la información sobre sus cotizaciones y pedidos previos.
+-Recibe notificaciones de los pedidos confirmados a través de correo electrónico o WhatsApp.
+
+6. Módulos del Sistema
+6.1. Módulo de Cotización
+
+Este módulo permite a los vendedores crear, editar y gestionar las cotizaciones para los clientes. Una vez que se crea una cotización, el vendedor puede convertirla en un pedido o actualizarla según las necesidades del cliente.
+
+Funciones disponibles:
+
+	-Crear Cotización: Genera una cotización para un cliente.
+
+	-Consultar Cotización: Permite buscar y ver las cotizaciones existentes.
+
+	-Editar Cotización: Actualiza una cotización existente.
+
+	-Eliminar Cotización: Elimina una cotización si ya no es necesaria.
+
+	-Convertir Cotización a Pedido: Una vez que la cotización es aceptada por el cliente, puede ser convertida a un pedido.
+
+6.2. Módulo de Pedido
+
+Este módulo gestiona la creación de pedidos a partir de las cotizaciones aprobadas. Los vendedores pueden realizar seguimiento del estado de los pedidos (Pendiente, Confirmado, Cancelado) y generar reportes de ellos.
+
+Funciones disponibles:
+
+	-Crear Pedido: Convierte una cotización confirmada en un pedido.
+
+	-Consultar Pedido: Permite revisar el estado y detalles de los pedidos existentes.
+
+	-Actualizar Estado de Pedido: Modifica el estado del pedido (Confirmado, Pendiente, Cancelado).
+
+	-Eliminar Pedido: Elimina un pedido si es necesario.
+
+6.3. Módulo de Clientes
+
+Gestiona la información de los clientes y su relación con las cotizaciones y pedidos. Los vendedores pueden consultar los datos de los clientes y asociarlos a nuevas cotizaciones y pedidos.
+
+Funciones disponibles:
+
+	-Consultar Cliente: Permite buscar clientes por nombre, teléfono o correo electrónico.
+
+	-Gestionar Cliente: Permite actualizar los datos de contacto y otro tipo de información del cliente.
+
+6.4. Módulo de Notificaciones
+
+Envía notificaciones automáticas a los clientes y vendedores. Las notificaciones pueden ser por correo electrónico o WhatsApp, dependiendo de la acción realizada (como la conversión de una cotización a pedido).
+
+
+7. Seguridad y Autenticación
+7.1. Autenticación
+
+El sistema utiliza JSON Web Tokens (JWT) para asegurar que solo los usuarios autenticados y con el rol adecuado puedan realizar ciertas acciones.
+
+Al iniciar sesión, el sistema genera un token JWT.
+
+Este token debe incluirse en cada solicitud HTTP a las APIs de los microservicios.
+
+Los usuarios con roles de Administrador o Vendedor tienen permisos diferentes, con el Administrador teniendo acceso total al sistema.
+
+7.2. Roles y Permisos
+
+El acceso a las funcionalidades se controla según el rol del usuario:
+
+Administrador: Control del historial (auditoria) y acceso a los reportes para decisiones de valor para la empresa.
+
+Vendedor: Solo acceso a las funciones de cotización, pedidos y reportes.
+
+
+8. Consejos de Uso
+
+Asegúrate de iniciar sesión con el usuario asignado.
+
+Verifica los datos antes de generar reportes o realizar cambios en cotizaciones y pedidos.
+
+Usa los filtros para buscar clientes, cotizaciones y pedidos específicos de manera eficiente.
+
+No compartas tu contraseña con otros usuarios para mantener la seguridad del sistema.
+
+9. Créditos
+
+Desarrollado por:
+
+Natalia Vanesa Martínez Rodríguez
+Abraham Pesca Prada
+Samuel Julián Rodríguez Chávez
+
+

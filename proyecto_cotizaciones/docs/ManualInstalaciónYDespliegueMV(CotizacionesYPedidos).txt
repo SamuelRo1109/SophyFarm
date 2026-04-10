@@ -1,0 +1,170 @@
+--------------------------------------------------------------
+MANUAL DE USUARIO: Configuración de la Máquina Virtual Debian 11 con PostgreSQL y DBeaver
+--------------------------------------------------------------
+
+1. Objetivo General
+
+Este manual detalla el proceso para:
+
+-Importar y configurar una máquina virtual Debian 11 en VirtualBox.
+-Instalar y habilitar PostgreSQL como el motor de base de datos SQL.
+-Configurar el acceso remoto a PostgreSQL usando DBeaver para la administración.
+-Configurar la red para permitir el acceso externo desde otro equipo usando una IP fija.
+-Verificar la conectividad y el funcionamiento correcto de la base de datos PostgreSQL desde la máquina virtual y DBeaver.
+
+2. Requisitos del Sistema
+
+-Como usuario, debes asegurarte de lo siguiente:
+-Tener VirtualBox instalado en tu computadora.
+-El archivo .ova de la máquina virtual con Debian 11 exportado desde VirtualBox.
+-Conexión activa a la red.
+-Acceso administrativo en la computadora y en Debian.
+
+3. ¿Por qué elegimos Debian 11 y PostgreSQL para el desarrollo del proyecto?
+
+-Debian 11 fue elegido como el sistema operativo base debido a su conocida estabilidad, seguridad y amplio soporte comunitario. Es una distribución ampliamente utilizada en entornos de servidores, ideal para proyectos tanto educativos como profesionales.
+-PostgreSQL fue seleccionado como el motor de base de datos relacional debido a su alta fiabilidad, robustez, y compatibilidad con SQL estándar. Es ideal para manejar grandes volúmenes de datos transaccionales y garantizar la integridad de los mismos.
+-Este entorno asegura la escalabilidad, seguridad y rendimiento del sistema, lo cual es esencial para la gestión de cotizaciones y pedidos en el proyecto.
+
+
+Asegúrese de instalar la versión correcta de DEBIAN 11 usando la imagen ISO, la cual es: debian-11.6.0-amd64-netinst.iso
+Lo puede descargar desde el siguiente link: https://cdimage.debian.org/cdimage/archive/11.6.0/amd64/iso-cd/ 
+Para instalar PostgreSQL en Debian 11 se puede consultar el siguiente link:
+
+POSTGRESQL INSTALACIÓN DEBIAN 11:
+https://chachocool.com/como-instalar-postgresql-en-debian-11-bullseye/
+
+
+4. Configuración de la Máquina Virtual en VirtualBox
+
+Una vez que hayas instalado el archivo con la imagen ISO "debian-11.6.0-amd64-netinst", sigue estos pasos cuidadosamente:
+
+4.1. Configuración de la Máquina Virtual en VirtualBox
+
+Haz clic en el botón ‘Nuevo’ y completa la información solicitada en la pantalla:
+
+	-Para el nombre, ingresa 'DebianBD2', y selecciona la carpeta donde se almacenará la máquina virtual.
+
+	-En la sección de imagen ISO, selecciona la imagen ISO descargada de Debian 11.
+
+	-Tipo: Linux, Subtipo: Debian, Versión: Debian (64-bit).
+
+	-Haz clic en Siguiente.
+
+	-Configura la memoria (RAM) en 2048 MB y selecciona 1 procesador como configuración mínima.
+
+	-Para la configuración del disco duro virtual, selecciona la opción "Crear un disco duro virtual ahora" y asigna un tamaño de 25 GB para evitar problemas de almacenamiento. Luego 	haz clic en Siguiente.
+
+	-Finalmente, haz clic en Finalizar.
+
+
+4.2. Configuración en Debian 11
+
+Al iniciar la máquina virtual, selecciona el idioma Español.
+
+Para el nombre de la máquina, utiliza 'mini' y la contraseña para acceder debe ser 'minimini'.
+
+En la sección de particionamiento de disco, selecciona la opción Guía - Usar todo el disco y luego elige "Todos los archivos en una partición (recomendado para nuevos usuarios)".
+
+Cuando llegue la pantalla de selección de programas, marca las siguientes opciones:
+
+	-Entorno de escritorio Debian
+
+	-GNOME
+
+	-Servidor SSH
+
+	-Utilidades estándar del sistema
+
+Una vez completado el proceso, el sistema pedirá iniciar sesión. Ingresa con la contraseña '1234'.
+
+4.3. Configuración de Red
+
+-Para habilitar el acceso remoto e internet para la máquina virtual, sigue estos pasos:
+-Selecciona la máquina virtual Debian11BD2 y ve a la sección de Configuración en la parte superior de VirtualBox.
+-Luego ve a la pestaña Modo Experto y selecciona Red.
+-Adaptador 1: Configura Conectado a: NAT para permitir el acceso a internet.
+-Adaptador 2: Configura Conectado a: Bridget para permitir la conexión de dos o más redes locales desde una dirección ip.
+-Recalcar que el adaptador puente permite que al conectarse a diferentes redes, se obtenga obligatoriamente una dirección ip por la cual se hará la conexión para el proyecto con VISUAL STUDIO CODE y con DBeaver para monitorear la base de datos.
+
+5. Instalación de PostgreSQL en Debian 11
+5.1. Procedimiento
+
+Primero, actualiza los paquetes con los siguientes comandos:
+sudo apt update && sudo apt upgrade
+
+6.1.1. Instalación de PostgreSQL
+
+Ejecuta los siguientes comandos para instalar PostgreSQL:
+sudo apt install postgresql postgresql-contrib -y
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+
+Verifica que PostgreSQL esté en funcionamiento:
+sudo systemctl status postgresql
+
+6.2. Configuración para el Acceso Remoto a PostgreSQL
+
+Para habilitar el acceso remoto a PostgreSQL, edita el archivo de configuración de PostgreSQL:
+sudo nano /etc/postgresql/12/main/postgresql.conf
+
+Busca y modifica la línea listen_addresses:
+listen_addresses = '*'
+
+Luego, edita el archivo pg_hba.conf:
+sudo nano /etc/postgresql/12/main/pg_hba.conf
+
+Agrega la siguiente línea para permitir conexiones desde cualquier IP:
+host    all             all             0.0.0.0/0            md5
+
+Reinicia el servicio de PostgreSQL para aplicar los cambios:
+sudo systemctl restart postgresql
+
+7. Instalación y Configuración de DBeaver
+7.1. Conexión a PostgreSQL desde DBeaver
+
+Abre DBeaver en tu computadora (Windows o Linux).
+
+Crea una nueva conexión:
+
+Host: 192.168.xx.xx (Acá debe ubicarse la ip que se obtiene cada vez que se enciende la MV)
+
+Puerto: 5432 (puerto por defecto de PostgreSQL)
+
+Base de datos: postgres (o la base de datos que necesites)
+
+Usuario: postgres (usuario por defecto)
+
+Contraseña: 1234
+
+Haz clic en Test Connection y si la conexión es exitosa, podrás empezar a administrar PostgreSQL desde DBeaver.
+
+
+9. Verificación de Servicios
+9.1. Verificación de la Conexión a PostgreSQL
+
+Usa el siguiente comando para probar la conexión de PostgreSQL desde PowerShell (en Windows):
+
+Test-NetConnection 192.168.56.10 -Port 5432
+
+9.2. Verificación del Estado de PostgreSQL
+
+Para verificar que PostgreSQL esté en ejecución, usa el siguiente comando en Debian:
+
+sudo systemctl status PostgreSQL
+
+
+10. Versión de PostgreSQL
+
+Si deseas verificar la versión instalada de PostgreSQL, ejecuta el siguiente comando:
+
+psql --version
+
+
+La versión instalada de PostgreSQL debería ser 12 o la versión correspondiente a la instalación.
+
+
+11. Conclusión
+
+Con estos pasos, habrás configurado con éxito la máquina virtual Debian 11 con PostgreSQL, habilitado el acceso remoto mediante DBeaver, y realizado las configuraciones necesarias para asegurar la conectividad y funcionamiento del sistema.
+
