@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Cliente</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        form {
+            width: 300px;
+            margin: auto;
+        }
+        input[type="text"], input[type="email"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .readonly {
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Editar Cliente</h1>
+<form id="editForm">
+    <!-- Tipo Cliente (Solo lectura) -->
+    <label for="tipoCliente">Tipo Cliente</label>
+    <input type="text" id="tipoCliente" class="readonly" readonly /> <!-- Solo texto, no editable -->
+
+    <!-- Tipo Documento (Solo lectura) -->
+    <label for="tipoDocumento">Tipo Documento</label>
+    <input type="text" id="tipoDocumento" class="readonly" readonly /> <!-- Solo texto, no editable -->
+
+    <!-- Campo oculto para idTipoCliente -->
+    <input type="hidden" id="idTipoCliente" name="idTipoCliente" /> <!-- Este campo es oculto pero se usa para enviar el valor -->
+
+    <!-- Campo oculto para idTipoDocumento -->
+    <input type="hidden" id="idTipoDocumento" name="idTipoDocumento" /> <!-- Este campo es oculto pero se usa para enviar el valor -->
+
+    <label for="numeroDocumento">Número Documento</label>
+    <input type="text" name="numeroDocumento" id="numeroDocumento" required />
+
+    <!-- Persona Natural: nombre y apellidos -->
+    <div id="naturalFields" style="display:none;">
+        <label for="primerNombre">Primer Nombre</label>
+        <input type="text" name="primerNombre" id="primerNombre" />
+        <label for="segundoNombre">Segundo Nombre</label>
+        <input type="text" name="segundoNombre" id="segundoNombre" />
+        <label for="primerApellido">Primer Apellido</label>
+        <input type="text" name="primerApellido" id="primerApellido" />
+        <label for="segundoApellido">Segundo Apellido</label>
+        <input type="text" name="segundoApellido" id="segundoApellido" />
+    </div>
+
+    <!-- Empresa: Razón social -->
+    <div id="empresaFields" style="display:none;">
+        <label for="razonSocial">Razón Social</label>
+        <input type="text" name="razonSocial" id="razonSocial" />
+    </div>
+
+    <label for="telefono">Teléfono</label>
+    <input type="text" name="telefono" id="telefono" required />
+
+    <label for="correo">Correo</label>
+    <input type="email" name="correo" id="correo" required />
+
+    <label for="direccion">Dirección</label>
+    <input type="text" name="direccion" id="direccion" required />
+
+    <label for="saldoActual">Saldo Actual</label>
+    <input type="text" name="saldoActual" id="saldoActual" required />
+
+    <label for="cupoCredito">Cupo Crédito</label>
+    <input type="text" name="cupoCredito" id="cupoCredito" required />
+
+    <button type="submit">Actualizar Cliente</button>
+</form>
+
+
+    <script>
+        const token = localStorage.getItem('authToken');
+        const form = document.getElementById('editForm');
+        
+        const tipoCliente = document.getElementById('tipoCliente');
+        const tipoDocumento = document.getElementById('tipoDocumento');
+        const naturalFields = document.getElementById('naturalFields');
+        const empresaFields = document.getElementById('empresaFields');
+
+        // Al cargar la página, obtenemos el cliente a editar
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('id');
+
+        if (!clientId) {
+            alert('ID de cliente no válido.');
+            window.location.href = 'listClients.html';  // Redirigir si no hay id
+        }
+
+      async function fetchClientData() {
+    try {
+        const response = await fetch(`/proyectoFinalIS2/co.edu.unbosque.cliente/${clientId}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        // Verificar si la respuesta es exitosa
+        if (!response.ok) {
+            console.error("Error de respuesta:", response.status, await response.text());
+            alert('Error al hacer la solicitud');
+            return;
+        }
+
+        const contentType = response.headers.get("Content-Type");
+        if (contentType && contentType.includes("application/json")) {
+            const data = await response.json();
+            console.log('Respuesta de la API:', data);
+
+            if (data.status === 'success') {
+                const client = data.data;
+
+                // Rellenar campos
+                tipoCliente.value = client.idtipocliente === 1 ? 'Persona Natural' : 'Empresa';
+                tipoDocumento.value = client.idtipodocumento === 1 ? 'Cédula de ciudadanía' : 'NIT'; 
+
+                // Asignar el valor de idTipoCliente y idTipoDocumento al campo oculto
+                document.getElementById('idTipoCliente').value = client.idtipocliente;
+                document.getElementById('idTipoDocumento').value = client.idtipodocumento;
+
+                // Rellenar otros campos
+                document.getElementById('numeroDocumento').value = client.numerodocumento || '';
+                document.getElementById('telefono').value = client.telefono || '';
+                document.getElementById('correo').value = client.correo || '';
+                document.getElementById('direccion').value = client.direccion || '';
+                document.getElementById('saldoActual').value = client.saldoactual || '';
+                document.getElementById('cupoCredito').value = client.cupocredito || '';
+
+                if (client.idtipocliente == 1) {  // Persona Natural
+                    document.getElementById('primerNombre').value = client.primernombre || '';
+                    document.getElementById('segundoNombre').value = client.segundonombre || '';
+                    document.getElementById('primerApellido').value = client.primerapellido || '';
+                    document.getElementById('segundoApellido').value = client.segundoapellido || '';
+                    naturalFields.style.display = 'block';
+                    empresaFields.style.display = 'none';
+                } else {  // Empresa
+                    document.getElementById('razonSocial').value = client.razonsocial || ''; 
+                    empresaFields.style.display = 'block';
+                    naturalFields.style.display = 'none';
+                }
+            } else {
+                alert('Error al obtener los datos del cliente.');
+            }
+        } else {
+            const errorText = await response.text();
+            console.error("Respuesta no JSON:", errorText);
+            alert('Error de formato de respuesta');
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert('Error de conexión');
+    }
+}
+
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(form);
+    const data = {};
+
+    // Agregamos los campos editables y el campo 'idTipoCliente' a los datos que se enviarán
+    formData.forEach((value, key) => {
+        if (key !== 'tipoCliente' && key !== 'tipoDocumento') {  // No enviar los campos ineditables
+            data[key] = value;
+        }
+    });
+
+    // Si el tipo de cliente es empresa, eliminar los campos de nombre
+    if (data.idTipoCliente == 2) {
+        delete data.primerNombre;
+        delete data.segundoNombre;
+        delete data.primerApellido;
+        delete data.segundoApellido;
+    }
+
+    try {
+        // Enviar la solicitud PUT con el valor actual de idTipoCliente
+        const response = await fetch(`/proyectoFinalIS2/co.edu.unbosque.cliente/${clientId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const responseText = await response.text();
+        console.log('Response Text:', responseText);
+
+        if (!response.ok) {
+            console.error("Error en la respuesta PUT:", response.status, responseText);
+            alert('Error al actualizar el cliente');
+            return;
+        }
+
+        try {
+            const result = JSON.parse(responseText);
+            if (result.status === 'success') {
+                alert('Cliente actualizado correctamente');
+                window.location.href = 'listClients.html';  // Redirigir a la lista de clientes
+            } else {
+                alert('Error al actualizar el cliente');
+            }
+        } catch (jsonError) {
+            console.error('Error al parsear JSON:', jsonError);
+            alert('Respuesta inválida del servidor');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Error de conexión');
+    }
+});
+
+
+
+
+        // Cargar los datos del cliente al inicio
+        fetchClientData();
+    </script>
+</body>
+</html>

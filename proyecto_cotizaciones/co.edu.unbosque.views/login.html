@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <p id="message" style="color: red;"></p>
+
+    <script>
+        // Este console.log nos ayudará a saber si el script se carga correctamente
+        console.log("El script de login se ha cargado correctamente.");
+
+        const form = document.getElementById('loginForm');
+        const messageEl = document.getElementById('message');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Evita que el form haga submit normal
+
+            messageEl.textContent = '';
+            console.log('Formulario enviado, preparando los datos');
+
+            const formData = new FormData(form);
+
+            try {
+                console.log('Enviando solicitud de login...');
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const text = await response.text();
+                console.log('Respuesta cruda del backend:', text);
+
+                let data;
+                try {
+                    data = JSON.parse(text); // Intentar parsear la respuesta del backend
+                    console.log('Respuesta JSON:', data); // Ver si realmente tenemos un JSON válido
+                } catch (e) {
+                    messageEl.textContent = 'Error: el backend no devolvió JSON. Revisa la consola (F12).';
+                    console.error('Error al parsear el JSON:', e);
+                    return;
+                }
+
+                if (!response.ok || data.status !== 'success') {
+                    messageEl.textContent = data.message || 'Error en el login';
+                    console.log('Login fallido:', data.message);
+                    return;
+                }
+
+                // Guardar token y datos básicos en localStorage
+                localStorage.setItem('authToken', data.token);
+localStorage.setItem('username', data.username);
+localStorage.setItem('roleId', data.role_id);
+console.log("Token generado:", data.token); // Asegúrate de que este token sea correcto
+
+
+                // Imprimir el token en la consola para verificación
+                console.log("Token generado:", data.token);
+
+                // Redirigir al dashboard con un pequeño retraso para asegurarse de que se ejecute el console.log
+                setTimeout(() => {
+                    window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/dashboard.html';
+                }, 200); 
+
+            } catch (error) {
+                console.error('Error al hacer la solicitud:', error);
+                messageEl.textContent = 'Error de conexión con el servidor';
+            }
+        });
+    </script>
+</body>
+</html>

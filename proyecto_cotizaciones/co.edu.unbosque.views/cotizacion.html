@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Cotización</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .left-panel {
+            flex: 0 0 35%;
+        }
+
+        .right-panel {
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .slider-container {
+            width: 100%;
+            height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .slider-container table {
+            width: 100%;
+            min-width: 700px;
+        }
+
+        .slider-container table th,
+        .slider-container table td {
+            min-width: 100px;
+        }
+
+        .slider-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .slider-container::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 4px;
+        }
+
+        .slider-container::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Crear Cotización</h1>
+
+    <div class="layout">
+        <!-- LADO IZQUIERDO: formulario de cotización + detalle -->
+        <div class="left-panel">
+            <form id="cotizacionForm">
+                <label for="cliente">Seleccionar Cliente:</label>
+                <select id="cliente" required>
+                    <option value="">--Seleccione--</option>
+                </select><br><br>
+
+                <label for="vendedor">Seleccionar Vendedor:</label>
+                <select id="vendedor" required>
+                    <option value="">--Seleccione--</option>
+                </select><br><br>
+
+                <label for="fechaCotizacion">Fecha de Cotización:</label>
+                <input type="date" id="fechaCotizacion" required><br><br>
+
+                <button type="submit">Guardar Cotización</button>
+            </form>
+
+            <p id="message"></p>
+
+            <!-- Botón para añadir detalles -->
+            <button id="addDetailBtn" style="display:none;">Añadir Detalle</button>
+
+            <!-- Formulario para agregar detalle -->
+            <div id="detalleForm" style="display:none;">
+                <h3>Detalles de la Cotización</h3>
+                <label for="producto">Seleccionar Producto:</label>
+                <select id="producto" required>
+                    <option value="">--Seleccione--</option>
+                    <!-- Aquí se insertarán los productos -->
+                </select><br><br>
+
+                <label for="cantidad">Cantidad:</label>
+                <input type="number" id="cantidad" required><br><br>
+
+                <label for="precioUnitario">Precio Unitario:</label>
+                <input type="number" id="precioUnitario" required><br><br>
+
+                <!-- Campo para mostrar el valorSubtotal -->
+                <label for="valorSubtotal">Valor Subtotal:</label>
+                <input type="text" id="valorSubtotal" readonly><br><br>
+
+                <button id="saveDetailBtn">Guardar Detalle</button>
+            </div>
+        </div>
+
+        <!-- LADO DERECHO: tabla de cotizaciones -->
+        <div class="right-panel">
+            <h2>Cotizaciones Existentes</h2>
+            <div class="slider-container">
+                <table id="cotizacionesTable">
+                    <thead>
+                        <tr>
+                            <th>ID Cotización</th>
+                            <th>Cliente</th>
+                            <th>Vendedor</th>
+                            <th>Fecha Cotización</th>
+                            <th>Valor Neto</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Aquí se llenarán las cotizaciones con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('authToken');
+        const clienteSelect = document.getElementById('cliente');
+        const vendedorSelect = document.getElementById('vendedor');
+        const messageEl = document.getElementById('message');
+        const addDetailBtn = document.getElementById('addDetailBtn');
+        const detalleForm = document.getElementById('detalleForm');
+        const saveDetailBtn = document.getElementById('saveDetailBtn');
+        const productoSelect = document.getElementById('producto');
+        const cantidadInput = document.getElementById('cantidad');
+        const precioUnitarioInput = document.getElementById('precioUnitario');
+        const valorSubtotalInput = document.getElementById('valorSubtotal');
+        const cotizacionesTBody = document.querySelector('#cotizacionesTable tbody');
+        let idCotizacion = null;  // Se asigna cuando se crea la cotización
+
+        // Redirigir al login si no hay token
+        if (!token) {
+            window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/login.html';
+        }
+
+        // ========= CLIENTES =========
+        async function fetchClientes() {
+            try {
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.cliente', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('No se pudieron obtener los clientes');
+                }
+
+                clienteSelect.innerHTML = '<option value="">--Seleccione--</option>';
+                data.data.forEach(client => {
+                    const option = document.createElement('option');
+                    let clienteNombre = '';
+                    if (client.idtipocliente === 1) {
+                        clienteNombre = `${client.primernombre} ${client.primerapellido}`;
+                    } else if (client.idtipocliente === 2) {
+                        clienteNombre = client.razonsocial;
+                    }
+                    option.value = client.idcliente;
+                    option.textContent = clienteNombre || 'No definido';
+                    clienteSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error(error);
+                messageEl.textContent = 'Error al cargar clientes';
+            }
+        }
+
+        // ========= VENDEDORES =========
+        async function fetchVendedores() {
+            try {
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.vendedor', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('No se pudieron obtener los vendedores');
+                }
+
+                vendedorSelect.innerHTML = '<option value="">--Seleccione--</option>';
+                data.data.forEach(vendedor => {
+                    const option = document.createElement('option');
+                    option.value = vendedor.idvendedor;
+                    option.textContent = `${vendedor.primernombre} ${vendedor.primerapellido}`;
+                    vendedorSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error(error);
+                messageEl.textContent = 'Error al cargar vendedores';
+            }
+        }
+
+        // ========= PRODUCTOS =========
+        async function fetchProductos() {
+            try {
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.elemento', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('No se pudieron obtener los productos');
+                }
+
+                productoSelect.innerHTML = '<option value="">--Seleccione--</option>';
+
+                if (Array.isArray(data.data) && data.data.length > 0) {
+                    data.data.forEach(producto => {
+                        const option = document.createElement('option');
+                        const idProd = producto.idelemento ?? producto.idElemento;
+                        const precioVenta = producto.precio_venta_ac 
+                                            ?? producto.precioventaac 
+                                            ?? producto.precioVentaAc 
+                                            ?? 0;
+
+                        option.value = idProd;
+                        option.textContent = `${producto.nombre} - $${Number(precioVenta).toFixed(2)}`;
+                        // Guardamos el precio de venta actual en un data-atributo
+                        option.dataset.precio = precioVenta;
+
+                        productoSelect.appendChild(option);
+                    });
+
+                    console.log("Productos cargados:", data.data);
+                } else {
+                    console.error("No se encontraron productos.");
+                }
+            } catch (error) {
+                console.error(error);
+                messageEl.textContent = 'Error al cargar productos';
+            }
+        }
+
+        // Cuando cambie el producto, llenar el precio unitario con precio_venta_ac
+        productoSelect.addEventListener('change', () => {
+            const opt = productoSelect.options[productoSelect.selectedIndex];
+            const precio = parseFloat(opt.dataset.precio || '0');
+
+            if (!isNaN(precio) && precio > 0) {
+                precioUnitarioInput.value = precio.toFixed(2);
+            } else {
+                precioUnitarioInput.value = '';
+            }
+            calcularSubtotal();
+        });
+
+        // ========= COTIZACIONES (TABLA) =========
+        async function fetchCotizaciones() {
+            try {
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.cotizacion', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                console.log("Cotizaciones recibidas:", data);
+
+                if (data.status === 'success') {
+                    cotizacionesTBody.innerHTML = '';
+
+                    data.data.forEach(cotizacion => {
+                        const id         = cotizacion.idcotizacion   ?? cotizacion.idCotizacion;
+                        const idCliente  = cotizacion.idcliente      ?? cotizacion.idCliente;
+                        const idVendedor = cotizacion.idvendedor     ?? cotizacion.idVendedor;
+                        const fecha      = cotizacion.fechacotizacion ?? cotizacion.fechaCotizacion;
+                        const valorNeto  = cotizacion.valorneto      ?? cotizacion.valorNeto ?? 0;
+                        const estadoRaw  = cotizacion.estadocotizacion ?? cotizacion.estadoCotizacion ?? 'P';
+
+                        let estadoTexto = 'Pendiente';
+                        if (estadoRaw === 'A') estadoTexto = 'Aprobada';
+                        if (estadoRaw === 'C') estadoTexto = 'Cancelada';
+
+                        const row = cotizacionesTBody.insertRow();
+                        row.setAttribute('data-id', id);
+
+                        row.innerHTML = `
+                            <td>${id}</td>
+                            <td>${idCliente}</td>
+                            <td>${idVendedor}</td>
+                            <td>${fecha}</td>
+                            <td>${valorNeto}</td>
+                            <td>${estadoTexto}</td>
+                            <td>
+                                <button onclick="editCotizacion(${id})">Editar</button>
+                                <button onclick="deleteCotizacion(${id})">Eliminar</button>
+                                <button onclick="changeStatus(${id}, 'A')">Confirmar</button>
+                                <button onclick="notificarCotizacionEmail(${id}, '${estadoTexto}')">Enviar Email</button>
+                                <button onclick="notificarCotizacionWhatsApp(${id}, '${estadoTexto}')">WhatsApp</button>
+                            </td>
+                        `;
+                    });
+                } else {
+                    throw new Error('Error al cargar las cotizaciones');
+                }
+            } catch (error) {
+                console.error(error);
+                messageEl.textContent = 'Error al cargar las cotizaciones';
+            }
+        }
+
+        // ========= ACCIONES DE LA TABLA =========
+        function editCotizacion(id) {
+            window.location.href = `/proyectoFinalIS2/co.edu.unbosque.views/editCotizacion.html?id=${id}`;
+        }
+
+        function deleteCotizacion(id) {
+            if (!confirm('¿Estás seguro de eliminar esta cotización?')) return;
+
+            fetch(`/proyectoFinalIS2/co.edu.unbosque.cotizacion/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Cotización eliminada');
+                    fetchCotizaciones();
+                } else {
+                    alert('Error al eliminar la cotización');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error al eliminar la cotización');
+            });
+        }
+
+        // changeStatus enviando JSON
+        function changeStatus(id, status) {
+            fetch(`/proyectoFinalIS2/co.edu.unbosque.cotizacion/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ estadoCotizacion: status })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    fetchCotizaciones();
+                } else {
+                    alert('Error al cambiar el estado de la cotización');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error al cambiar el estado de la cotización');
+            });
+        }
+
+        // ========= CREAR COTIZACIÓN =========
+        const form = document.getElementById('cotizacionForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            messageEl.textContent = '';
+
+            const cliente = clienteSelect.value;
+            const vendedor = vendedorSelect.value;
+            const fechaCotizacion = document.getElementById('fechaCotizacion').value;
+
+            if (!cliente || !vendedor || !fechaCotizacion) {
+                messageEl.textContent = 'Por favor, complete todos los campos.';
+                return;
+            }
+
+            const body = {
+                idCliente: cliente,
+                idVendedor: vendedor,
+                fechaCotizacion: fechaCotizacion
+            };
+
+            try {
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.cotizacion', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    idCotizacion = data.idCotizacion;
+                    messageEl.style.color = 'green';
+                    messageEl.textContent = `Cotización creada con ID: ${data.idCotizacion}`;
+                    form.reset();
+
+                    addDetailBtn.style.display = 'inline-block';
+
+                    fetchCotizaciones();
+                } else {
+                    throw new Error(data.message || 'Error al crear la cotización');
+                }
+            } catch (error) {
+                console.error(error);
+                messageEl.style.color = 'red';
+                messageEl.textContent = error.message;
+            }
+        });
+
+        // ========= DETALLE: mostrar form =========
+        addDetailBtn.addEventListener('click', () => {
+            detalleForm.style.display = 'block';
+            fetchProductos();
+        });
+
+        // ========= DETALLE: calcular subtotal =========
+        function calcularSubtotal() {
+            const cantidad = parseFloat(cantidadInput.value) || 0;
+            const precioUnitario = parseFloat(precioUnitarioInput.value) || 0;
+            const valorSubtotal = cantidad * precioUnitario;
+            valorSubtotalInput.value = valorSubtotal.toFixed(2);
+        }
+
+        cantidadInput.addEventListener('input', calcularSubtotal);
+        precioUnitarioInput.addEventListener('input', calcularSubtotal);
+
+        // ========= DETALLE: guardar =========
+        saveDetailBtn.addEventListener('click', async () => {
+            const producto = productoSelect.value;
+            const cantidad = cantidadInput.value;
+            const precioUnitario = precioUnitarioInput.value;
+
+            if (!producto || producto === "undefined") {
+                messageEl.textContent = 'Por favor, seleccione un producto.';
+                return;
+            }
+
+            if (!cantidad || !precioUnitario) {
+                messageEl.textContent = 'Por favor, complete todos los campos del detalle.';
+                return;
+            }
+
+            const valorSubtotal = cantidad * precioUnitario;
+
+            const detailBody = {
+                idCotizacion: idCotizacion,
+                idProducto: producto,
+                cantidad: cantidad,
+                precioUnitario: precioUnitario,
+                valorSubtotal: valorSubtotal
+            };
+
+            try {
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.detallecotizacion', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(detailBody)
+                });
+
+                const data = await response.json();
+                console.log("Respuesta del servidor (JSON detalle):", data);
+
+                if (data.status === 'success') {
+                    messageEl.style.color = 'green';
+                    messageEl.textContent = 'Detalle de cotización añadido correctamente';
+                    detalleForm.style.display = 'none';
+
+                    fetchCotizaciones();
+                } else {
+                    throw new Error(data.message || 'Error al añadir el detalle');
+                }
+
+            } catch (error) {
+                console.error("Error al crear el detalle de cotización:", error);
+                messageEl.style.color = 'red';
+                messageEl.textContent = error.message;
+            }
+        });
+
+        // ========= NOTIFICACIONES COTIZACIÓN =========
+        function notificarCotizacionEmail(id, estadoTexto) {
+    if (estadoTexto !== 'Aprobada') {
+        alert('Solo se pueden enviar notificaciones de cotizaciones aprobadas.');
+        return;
+    }
+
+    fetch(`/proyectoFinalIS2/co.edu.unbosque.notificacion/cotizacion/${id}/email`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(r => r.text())
+    .then(text => {
+        console.log('🧩 [DEBUG] RAW respuesta EMAIL cotización:', text);
+
+        const trimmed = text.trim();
+        let data;
+
+        try {
+            if (!trimmed.startsWith('{')) {
+                console.error('⚠️ [DEBUG] La respuesta NO es JSON puro. Probablemente es HTML de error de PHP.');
+                alert('El servidor no devolvió JSON válido al enviar la notificación por correo.\nRevisa la consola (F12) para ver el detalle del error.');
+                return;
+            }
+            data = JSON.parse(trimmed);
+        } catch (e) {
+            console.error('❌ [DEBUG] Error parseando JSON de notificarCotizacionEmail:', e);
+            alert('Error procesando la respuesta del servidor al enviar la notificación por correo.\nRevisa la consola para más detalles.');
+            return;
+        }
+
+        console.log('✅ [DEBUG] JSON parseado EMAIL cotización:', data);
+
+        if (data.status === 'success') {
+            alert('Notificación enviada por correo correctamente.');
+        } else {
+            alert(data.message || 'Error al enviar notificación.');
+        }
+    })
+    .catch(err => {
+        console.error('❌ [DEBUG] Error de red en notificarCotizacionEmail:', err);
+        alert('Error de conexión al enviar notificación.');
+    });
+}
+
+
+        function notificarCotizacionWhatsApp(id, estadoTexto) {
+    if (estadoTexto !== 'Aprobada') {
+        alert('Solo se pueden enviar notificaciones de cotizaciones aprobadas.');
+        return;
+    }
+
+    fetch(`/proyectoFinalIS2/co.edu.unbosque.notificacion/cotizacion/${id}/whatsapp`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(r => r.text())
+    .then(text => {
+        console.log('🧩 [DEBUG] RAW respuesta WHATSAPP cotización:', text);
+
+        const trimmed = text.trim();
+        let data;
+
+        try {
+            if (!trimmed.startsWith('{')) {
+                console.error('⚠️ [DEBUG] La respuesta NO es JSON puro. Probablemente es HTML de error de PHP.');
+                alert('El servidor no devolvió JSON válido al generar la notificación de WhatsApp.\nRevisa la consola (F12) para ver el detalle del error.');
+                return;
+            }
+            data = JSON.parse(trimmed);
+        } catch (e) {
+            console.error('❌ [DEBUG] Error parseando JSON de notificarCotizacionWhatsApp:', e);
+            alert('Error procesando la respuesta del servidor al generar la notificación de WhatsApp.\nRevisa la consola para más detalles.');
+            return;
+        }
+
+        console.log('✅ [DEBUG] JSON parseado WHATSAPP cotización:', data);
+
+        if (data.status === 'success') {
+            const waUrl = data.data?.waUrl;
+            if (waUrl) {
+                window.open(waUrl, '_blank');
+            } else {
+                alert('Notificación generada, pero no se obtuvo enlace de WhatsApp.');
+            }
+        } else {
+            alert(data.message || 'Error al generar notificación.');
+        }
+    })
+    .catch(err => {
+        console.error('❌ [DEBUG] Error de red en notificarCotizacionWhatsApp:', err);
+        alert('Error de conexión al generar notificación.');
+    });
+}
+
+        // Cargar datos iniciales
+        fetchClientes();
+        fetchVendedores();
+        fetchCotizaciones();
+    </script>
+</body>
+</html>

@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Pedidos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .left-panel {
+            flex: 0 0 35%;
+        }
+
+        .right-panel {
+            flex: 1;
+        }
+
+        .estado-confirmado {
+            background-color: #7cd992;  /* verde agradable */
+            color: #034d1c;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .slider-container {
+            width: 100%;
+            height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .slider-container table {
+            width: 100%;
+            min-width: 700px;
+        }
+
+        .slider-container table th,
+        .slider-container table td {
+            min-width: 100px;
+        }
+
+        .slider-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .slider-container::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 4px;
+        }
+
+        .slider-container::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+
+        #message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .estado-pill {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .estado-pendiente {
+            background-color: #ffe8a1;
+        }
+
+        .estado-preparacion {
+            background-color: #a1d8ff;
+        }
+
+        .estado-entregado {
+            background-color: #b5f5b5;
+        }
+
+        .estado-cancelado {
+            background-color: #ffb3b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Pedidos</h1>
+
+    <div class="layout">
+        <!-- LADO IZQUIERDO: formulario de pedido + detalle -->
+        <div class="left-panel">
+            <h2>Crear Pedido</h2>
+            <form id="pedidoForm">
+                <label for="cotizacion">Seleccionar Cotización:</label>
+                <select id="cotizacion" required>
+                    <option value="">--Seleccione--</option>
+                </select><br><br>
+
+                <label for="fechaPedido">Fecha de Pedido:</label>
+                <input type="date" id="fechaPedido" required><br><br>
+
+                <button type="submit">Guardar Pedido</button>
+            </form>
+
+            <p id="message"></p>
+
+            <!-- Botón para añadir detalles (se muestra tras crear pedido) -->
+            <button id="addDetailBtn" style="display:none;">Añadir Detalle</button>
+
+            <!-- Formulario para agregar detalle -->
+            <div id="detalleForm" style="display:none;">
+                <h3>Agregar Detalle al Pedido</h3>
+
+                <label for="producto">Seleccionar Producto:</label>
+                <select id="producto" required>
+                    <option value="">--Seleccione--</option>
+                </select><br><br>
+
+                <label for="cantidad">Cantidad:</label>
+                <input type="number" id="cantidad" min="1" required><br><br>
+
+                <label for="precioUnitario">Precio Unitario:</label>
+                <input type="number" id="precioUnitario" min="0" step="0.01" required><br><br>
+
+                <label for="valorSubtotal">Valor Subtotal:</label>
+                <input type="text" id="valorSubtotal" readonly><br><br>
+
+                <button id="saveDetailBtn">Guardar Detalle</button>
+            </div>
+        </div>
+
+        <!-- LADO DERECHO: tabla de pedidos -->
+        <div class="right-panel">
+            <h2>Pedidos Existentes</h2>
+            <div class="slider-container">
+                <table id="pedidosTable">
+                    <thead>
+                        <tr>
+                            <th>ID Pedido</th>
+                            <th>Cliente</th>
+                            <th>ID Cotización</th>
+                            <th>Fecha Pedido</th>
+                            <th>Total Pedido</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llena con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('authToken');
+        const cotizacionSelect = document.getElementById('cotizacion');
+        const fechaPedidoInput = document.getElementById('fechaPedido');
+        const messageEl = document.getElementById('message');
+        const addDetailBtn = document.getElementById('addDetailBtn');
+        const detalleForm = document.getElementById('detalleForm');
+        const productoSelect = document.getElementById('producto');
+        const cantidadInput = document.getElementById('cantidad');
+        const precioUnitarioInput = document.getElementById('precioUnitario');
+        const valorSubtotalInput = document.getElementById('valorSubtotal');
+        const saveDetailBtn = document.getElementById('saveDetailBtn');
+        const pedidosTBody = document.querySelector('#pedidosTable tbody');
+
+        let idPedido = null;
+        let idCotizacionPedido = null;   // cotización asociada al pedido recién creado
+        let productosCache = [];
+        let productosCotizados = [];     // productos de la cotización
+
+        if (!token) {
+            window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/login.html';
+        }
+
+        // ========= CARGAR COTIZACIONES PARA EL SELECT =========
+        async function fetchCotizaciones() {
+            try {
+                const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.cotizacion', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('No se pudieron obtener las cotizaciones');
+                }
+
+                cotizacionSelect.innerHTML = '<option value="">--Seleccione--</option>';
+
+                data.data.forEach(cot => {
+                    const id = cot.idcotizacion ?? cot.idCotizacion;
+                    const idCliente = cot.idcliente ?? cot.idCliente;
+                    const valorNeto = cot.valorneto ?? cot.valorNeto ?? 0;
+                    const estado = cot.estadocotizacion ?? cot.estadoCotizacion ?? 'P';
+
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `Cotización #${id} - Cliente ${idCliente} - Neto ${valorNeto} (${estado})`;
+                    cotizacionSelect.appendChild(option);
+                });
+
+            } catch (err) {
+                console.error(err);
+                messageEl.textContent = 'Error al cargar cotizaciones';
+            }
+        }
+
+        // ========= CARGAR PRODUCTOS (CATÁLOGO + COTIZADOS) =========
+        async function fetchProductos() {
+            try {
+                // 1) Catálogo completo
+                const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.elemento', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('No se pudieron obtener los productos');
+                }
+
+                productosCache = Array.isArray(data.data) ? data.data : [];
+
+                productosCotizados = [];
+                // 2) Si el pedido tiene cotización asociada, traemos sus detalles
+                if (idCotizacionPedido) {
+                    try {
+                        const resDet = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallecotizacion/${idCotizacionPedido}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        const dataDet = await resDet.json();
+                        console.log('Detalles cotización para pedido:', dataDet);
+
+                        if (dataDet.status === 'success' && Array.isArray(dataDet.data)) {
+                            productosCotizados = dataDet.data.map(det => {
+                                const idProd = det.idproducto ?? det.idProducto;
+                                const nombreProd = det.nombreproducto ?? det.nombreProducto ?? `Producto #${idProd}`;
+                                return {
+                                    idProducto: idProd,
+                                    nombreProducto: nombreProd
+                                };
+                            });
+                        }
+                    } catch (errDet) {
+                        console.error('Error cargando productos cotizados:', errDet);
+                    }
+                }
+
+                // 3) Construir el <select> con optgroups
+                productoSelect.innerHTML = '<option value="">--Seleccione--</option>';
+
+                const setCotizados = new Set(
+                    productosCotizados.map(p => String(p.idProducto))
+                );
+
+                if (productosCotizados.length > 0) {
+                    const groupCot = document.createElement('optgroup');
+                    groupCot.label = 'Productos de la cotización';
+                    productosCotizados.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.idProducto;
+                        opt.textContent = p.nombreProducto;
+                        groupCot.appendChild(opt);
+                    });
+                    productoSelect.appendChild(groupCot);
+                }
+
+                const groupOtros = document.createElement('optgroup');
+                groupOtros.label = 'Otros productos';
+                productosCache.forEach(prod => {
+                    const idStr = String(prod.idelemento);
+                    if (!setCotizados.has(idStr)) {
+                        const opt = document.createElement('option');
+                        opt.value = prod.idelemento;
+                        opt.textContent = prod.nombre;
+                        groupOtros.appendChild(opt);
+                    }
+                });
+                productoSelect.appendChild(groupOtros);
+
+            } catch (err) {
+                console.error(err);
+                messageEl.textContent = 'Error al cargar productos';
+            }
+        }
+
+        // Al cambiar producto, llenamos precio con precio_venta_ac si existe
+        productoSelect.addEventListener('change', () => {
+            const idProd = productoSelect.value;
+            const prod = productosCache.find(p => String(p.idelemento) === String(idProd));
+            if (prod) {
+                const precio = prod.precio_venta_ac ?? prod.precioventaac ?? prod.precioVentaAc ?? 0;
+                precioUnitarioInput.value = Number(precio).toFixed(2);
+                calcularSubtotal();
+            } else {
+                precioUnitarioInput.value = '';
+                calcularSubtotal();
+            }
+        });
+
+        // ========= CARGAR PEDIDOS EN TABLA =========
+        async function fetchPedidos() {
+            try {
+                const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.pedido', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('Error al cargar pedidos');
+                }
+
+                pedidosTBody.innerHTML = '';
+
+                data.data.forEach(ped => {
+                    const idPedidoRow = ped.idpedido ?? ped.idPedido;
+                    const idCotizacion = ped.idcotizacion ?? ped.idCotizacion;
+                    const fecha = ped.fechapedido ?? ped.fechaPedido;
+                    const total = ped.totalpedido ?? ped.totalPedido ?? 0;
+                    const estado = ped.estadopedido ?? ped.estadoPedido ?? 'Pendiente';
+
+                    let nombreCliente = ped.razonsocial || '';
+                    if (!nombreCliente && ped.primernombre) {
+                        nombreCliente = `${ped.primernombre} ${ped.primerapellido ?? ''}`.trim();
+                    }
+                    if (!nombreCliente) {
+                        nombreCliente = `Cliente #${ped.idcliente ?? ped.idCliente}`;
+                    }
+
+                    let estadoClass = 'estado-pendiente';
+                    if (estado === 'Confirmado') estadoClass = 'estado-confirmado';
+                    else if (estado === 'Cancelado') estadoClass = 'estado-cancelado';
+
+                    const row = pedidosTBody.insertRow();
+                    row.setAttribute('data-id', idPedidoRow);
+
+                    row.innerHTML = `
+                        <td>${idPedidoRow}</td>
+                        <td>${nombreCliente}</td>
+                        <td>${idCotizacion}</td>
+                        <td>${fecha}</td>
+                        <td>${total}</td>
+                        <td><span class="estado-pill ${estadoClass}">${estado}</span></td>
+                        <td>
+                            <button onclick="editPedido(${idPedidoRow})">Editar</button>
+                            <button onclick="deletePedido(${idPedidoRow})">Eliminar</button>
+                            <button onclick="changeStatus(${idPedidoRow}, 'Confirmado')">Confirmar</button>
+                            <button onclick="changeStatus(${idPedidoRow}, 'Cancelado')">Cancelar</button>
+                            <button onclick="notificarPedidoEmail(${idPedidoRow}, '${estado}')">Enviar Email</button>
+                            <button onclick="notificarPedidoWhatsApp(${idPedidoRow}, '${estado}')">WhatsApp</button>
+                        </td>
+                    `;
+                });
+
+            } catch (err) {
+                console.error(err);
+                messageEl.textContent = 'Error al cargar pedidos';
+            }
+        }
+
+        // ========= NAVEGACIÓN DESDE TABLA =========
+        function editPedido(id) {
+            window.location.href = `/proyectoFinalIS2/co.edu.unbosque.views/editPedido.html?id=${id}`;
+        }
+
+        async function deletePedido(id) {
+            if (!confirm('¿Estás seguro de eliminar este pedido?')) return;
+
+            try {
+                const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.pedido/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const textResp = await res.text();
+                console.log('Resp eliminar pedido:', textResp);
+
+                const trimmed = textResp.trim();
+                if (!trimmed.startsWith('{')) {
+                    console.error('Respuesta no es JSON puro al eliminar pedido:', trimmed);
+                    alert('Error al procesar la respuesta del servidor (no es JSON válido).');
+                    return;
+                }
+
+                const data = JSON.parse(trimmed);
+
+                if (data.status === 'success') {
+                    alert('Pedido eliminado');
+                    fetchPedidos();
+                } else {
+                    alert(data.message || 'Error al eliminar el pedido');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error al eliminar el pedido');
+            }
+        }
+
+        function changeStatus(id, estado) {
+            fetch(`/proyectoFinalIS2/co.edu.unbosque.pedido/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ estadoPedido: estado })
+            })
+            .then(res => res.text())
+            .then(text => {
+                const trimmed = text.trim();
+                console.log('Resp cambiar estado pedido:', trimmed);
+
+                let data;
+                try {
+                    if (!trimmed.startsWith('{')) {
+                        throw new Error('Respuesta no es JSON');
+                    }
+                    data = JSON.parse(trimmed);
+                } catch (err) {
+                    console.error('Error parseando JSON cambiar estado:', err);
+                    alert('Error al procesar la respuesta del servidor.');
+                    return;
+                }
+
+                if (data.status === 'success') {
+                    // Si el back envía info de stock, mostramos la alerta
+                    if (data.data && Array.isArray(data.data.stocks) && data.data.stocks.length > 0) {
+                        let msg = '';
+
+                        if (estado === 'Confirmado') {
+                            msg = 'Pedido confirmado. Stock disponible ahora:\n';
+                        } else if (estado === 'Cancelado') {
+                            msg = 'Pedido cancelado. Stock restaurado:\n';
+                        }
+
+                        data.data.stocks.forEach(s => {
+                            const nombre = s.nombre || s.nombreProducto || (`Producto #${s.idProducto}`);
+                            msg += `- ${nombre}: ${s.existencia} unidades\n`;
+                        });
+
+                        alert(msg);
+                    }
+
+                    fetchPedidos();  // refresca la tabla
+                } else {
+                    alert(data.message || 'Error al cambiar el estado del pedido');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error al cambiar el estado del pedido');
+            });
+        }
+
+        // ========= CREAR PEDIDO CABECERA =========
+        const pedidoForm = document.getElementById('pedidoForm');
+
+        pedidoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            messageEl.textContent = '';
+            messageEl.style.color = 'black';
+
+            const idCotizacion = cotizacionSelect.value;
+            const fechaPedido = fechaPedidoInput.value;
+
+            if (!idCotizacion || !fechaPedido) {
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Por favor, complete todos los campos.';
+                return;
+            }
+
+            const body = {
+                idCotizacion: idCotizacion,
+                fechaPedido: fechaPedido
+            };
+
+            try {
+                const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.pedido', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    idPedido = data.idPedido;
+                    idCotizacionPedido = idCotizacion;   // guardamos la cotización del pedido
+                    messageEl.style.color = 'green';
+                    messageEl.textContent = `Pedido creado con ID: ${idPedido}`;
+                    pedidoForm.reset();
+
+                    addDetailBtn.style.display = 'inline-block';
+
+                    fetchPedidos();
+                } else {
+                    throw new Error(data.message || 'Error al crear el pedido');
+                }
+
+            } catch (err) {
+                console.error(err);
+                messageEl.style.color = 'red';
+                messageEl.textContent = err.message;
+            }
+        });
+
+        // ========= DETALLE: mostrar form =========
+        addDetailBtn.addEventListener('click', () => {
+            if (!idPedido) {
+                alert('Primero crea un pedido.');
+                return;
+            }
+            detalleForm.style.display = 'block';
+            fetchProductos();  // usa idCotizacionPedido para armar el select
+        });
+
+        // ========= DETALLE: calcular subtotal =========
+        function calcularSubtotal() {
+            const cantidad = parseFloat(cantidadInput.value) || 0;
+            const precio = parseFloat(precioUnitarioInput.value) || 0;
+            const subtotal = cantidad * precio;
+            valorSubtotalInput.value = subtotal.toFixed(2);
+        }
+
+        cantidadInput.addEventListener('input', calcularSubtotal);
+        precioUnitarioInput.addEventListener('input', calcularSubtotal);
+
+        // ========= DETALLE: guardar =========
+        saveDetailBtn.addEventListener('click', async () => {
+            if (!idPedido) {
+                alert('Primero crea un pedido.');
+                return;
+            }
+
+            const idProducto = productoSelect.value;
+            const cantidad = cantidadInput.value;
+            const precioUnitario = precioUnitarioInput.value;
+
+            if (!idProducto || !cantidad || !precioUnitario) {
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Por favor, complete todos los campos del detalle.';
+                return;
+            }
+
+            const valorSubtotal = parseFloat(cantidad) * parseFloat(precioUnitario);
+
+            const body = {
+                idPedido: idPedido,
+                idProducto: idProducto,
+                cantidad: cantidad,
+                precioUnitario: precioUnitario,
+                valorSubtotal: valorSubtotal
+            };
+
+            try {
+                const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.detallepedido', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const textResp = await res.text();
+                console.log('Respuesta servidor detalle pedido:', textResp);
+
+                let data;
+                try {
+                    const trimmed = textResp.trim();
+                    if (!trimmed.startsWith('{')) {
+                        console.error('Respuesta no es JSON puro al agregar detalle:', trimmed);
+                        messageEl.style.color = 'red';
+                        messageEl.textContent = 'Error al procesar la respuesta del servidor (no es JSON válido).';
+                        return;
+                    }
+                    data = JSON.parse(trimmed);
+                } catch (err) {
+                    console.error('Error parseando JSON:', err);
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = 'Error al procesar la respuesta del servidor.';
+                    return;
+                }
+
+                if (data.status === 'success') {
+                    messageEl.style.color = 'green';
+                    messageEl.textContent = 'Detalle de pedido agregado correctamente';
+                    detalleForm.style.display = 'none';
+                    cantidadInput.value = '';
+                    precioUnitarioInput.value = '';
+                    valorSubtotalInput.value = '';
+                    productoSelect.value = '';
+                    fetchPedidos();
+                } else {
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = data.message || 'Error al agregar el detalle';
+                }
+
+            } catch (err) {
+                console.error(err);
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Error al crear el detalle de pedido';
+            }
+        });
+
+        // ========= NOTIFICACIONES PEDIDO =========
+        function notificarPedidoEmail(id, estadoTexto) {
+    if (estadoTexto !== 'Confirmado') {
+        alert('Solo se pueden enviar notificaciones de pedidos confirmados.');
+        return;
+    }
+
+    fetch(`/proyectoFinalIS2/co.edu.unbosque.notificacion/pedido/${id}/email`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(r => r.text())
+    .then(text => {
+        console.log('🧩 [DEBUG] RAW respuesta EMAIL pedido:', text);
+
+        const trimmed = text.trim();
+        let data;
+
+        try {
+            if (!trimmed.startsWith('{')) {
+                console.error('⚠️ [DEBUG] La respuesta NO es JSON puro. Probablemente es HTML de error de PHP.');
+                alert('El servidor no devolvió JSON válido al enviar la notificación de pedido por correo.\nRevisa la consola (F12) para ver el detalle del error.');
+                return;
+            }
+            data = JSON.parse(trimmed);
+        } catch (e) {
+            console.error('❌ [DEBUG] Error parseando JSON de notificarPedidoEmail:', e);
+            alert('Error procesando la respuesta del servidor al enviar la notificación de pedido.\nRevisa la consola para más detalles.');
+            return;
+        }
+
+        console.log('✅ [DEBUG] JSON parseado EMAIL pedido:', data);
+
+        if (data.status === 'success') {
+            alert('Notificación de pedido enviada por correo correctamente.');
+        } else {
+            alert(data.message || 'Error al enviar notificación.');
+        }
+    })
+    .catch(err => {
+        console.error('❌ [DEBUG] Error de red en notificarPedidoEmail:', err);
+        alert('Error de conexión al enviar notificación.');
+    });
+}
+
+        function notificarPedidoWhatsApp(id, estadoTexto) {
+    if (estadoTexto !== 'Confirmado') {
+        alert('Solo se pueden enviar notificaciones de pedidos confirmados.');
+        return;
+    }
+
+    fetch(`/proyectoFinalIS2/co.edu.unbosque.notificacion/pedido/${id}/whatsapp`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(r => r.text())
+    .then(text => {
+        console.log('🧩 [DEBUG] RAW respuesta WHATSAPP pedido:', text);
+
+        const trimmed = text.trim();
+        let data;
+
+        try {
+            if (!trimmed.startsWith('{')) {
+                console.error('⚠️ [DEBUG] La respuesta NO es JSON puro. Probablemente es HTML de error de PHP.');
+                alert('El servidor no devolvió JSON válido al generar la notificación de pedido por WhatsApp.\nRevisa la consola (F12) para ver el detalle del error.');
+                return;
+            }
+            data = JSON.parse(trimmed);
+        } catch (e) {
+            console.error('❌ [DEBUG] Error parseando JSON de notificarPedidoWhatsApp:', e);
+            alert('Error procesando la respuesta del servidor al generar la notificación de pedido por WhatsApp.\nRevisa la consola para más detalles.');
+            return;
+        }
+
+        console.log('✅ [DEBUG] JSON parseado WHATSAPP pedido:', data);
+
+        if (data.status === 'success') {
+            const waUrl = data.data?.waUrl;
+            if (waUrl) {
+                window.open(waUrl, '_blank');
+            } else {
+                alert('Notificación generada, pero no se obtuvo enlace de WhatsApp.');
+            }
+        } else {
+            alert(data.message || 'Error al generar notificación.');
+        }
+    })
+    .catch(err => {
+        console.error('❌ [DEBUG] Error de red en notificarPedidoWhatsApp:', err);
+        alert('Error de conexión al generar notificación.');
+    });
+}
+
+
+        // Cargar datos iniciales
+        fetchCotizaciones();
+        fetchPedidos();
+    </script>
+</body>
+</html>

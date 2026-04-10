@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Pedido</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .info-box {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        input[type="number"] {
+            width: 80px;
+        }
+
+        #message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .section-title {
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Editar Pedido</h1>
+
+    <div class="info-box">
+        <p><strong>ID Pedido:</strong> <span id="infoIdPedido"></span></p>
+        <p><strong>Cliente:</strong> <span id="infoCliente"></span></p>
+        <p><strong>ID Cotización:</strong> <span id="infoIdCotizacion"></span></p>
+        <p><strong>Fecha Pedido:</strong> <span id="infoFechaPedido"></span></p>
+        <p><strong>Total Pedido:</strong> <span id="infoTotalPedido"></span></p>
+        <p><strong>Estado:</strong> <span id="infoEstadoPedido"></span></p>
+    </div>
+
+    <h2 class="section-title">Detalles del Pedido</h2>
+
+    <table id="detallesTable">
+        <thead>
+            <tr>
+                <th>ID Detalle</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Se llena con JS -->
+        </tbody>
+    </table>
+
+    <h3 class="section-title">Agregar nuevo detalle</h3>
+    <div id="nuevoDetalleBox">
+        <label for="productoNuevo">Producto:</label>
+        <select id="productoNuevo">
+            <option value="">--Seleccione--</option>
+        </select>
+
+        <label for="cantidadNueva">Cantidad:</label>
+        <input type="number" id="cantidadNueva" min="1">
+
+        <label for="precioUnitarioNuevo">Precio Unitario:</label>
+        <input type="number" id="precioUnitarioNuevo" min="0" step="0.01">
+
+        <label for="subtotalNuevo">Subtotal:</label>
+        <input type="text" id="subtotalNuevo" readonly>
+
+        <button id="btnAgregarDetalleNuevo">Agregar Detalle</button>
+    </div>
+
+    <p id="message"></p>
+
+    <script>
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/login.html';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const idPedido = urlParams.get('id');
+
+        if (!idPedido) {
+            alert('ID de pedido no válido.');
+            window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/pedido.html';
+        }
+
+        const infoIdPedido      = document.getElementById('infoIdPedido');
+        const infoCliente       = document.getElementById('infoCliente');
+        const infoIdCotizacion  = document.getElementById('infoIdCotizacion');
+        const infoFechaPedido   = document.getElementById('infoFechaPedido');
+        const infoTotalPedido   = document.getElementById('infoTotalPedido');
+        const infoEstadoPedido  = document.getElementById('infoEstadoPedido');
+
+        const detallesTableBody = document.querySelector('#detallesTable tbody');
+        const messageEl         = document.getElementById('message');
+
+        const productoNuevoSelect   = document.getElementById('productoNuevo');
+        const cantidadNuevaInput    = document.getElementById('cantidadNueva');
+        const precioUnitarioNuevo   = document.getElementById('precioUnitarioNuevo');
+        const subtotalNuevoInput    = document.getElementById('subtotalNuevo');
+        const btnAgregarDetalleNuevo= document.getElementById('btnAgregarDetalleNuevo');
+
+        let productosCache = [];          // catálogo completo
+        let idCotizacionPedido = null;    // idCotización asociado al pedido
+        let productosCotizados = [];      // productos que vienen de la cotización
+
+        // ========= CARGAR CABECERA DEL PEDIDO =========
+        async function fetchPedidoInfo() {
+            try {
+                const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.pedido', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('Error al obtener pedidos');
+                }
+
+                const pedido = data.data.find(p => {
+                    const id = p.idpedido ?? p.idPedido;
+                    return String(id) === String(idPedido);
+                });
+
+                if (!pedido) {
+                    alert('Pedido no encontrado.');
+                    window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/pedido.html';
+                    return;
+                }
+
+                const idPed     = pedido.idpedido ?? pedido.idPedido;
+                const idCotiz   = pedido.idcotizacion ?? pedido.idCotizacion;
+                const fecha     = pedido.fechapedido ?? pedido.fechaPedido;
+                const total     = pedido.totalpedido ?? pedido.totalPedido ?? 0;
+                const estado    = pedido.estadopedido ?? pedido.estadoPedido ?? 'Pendiente';
+
+                idCotizacionPedido = idCotiz; // 👈 guardamos para usar luego en productos
+
+                let nombreCliente = pedido.razonsocial || '';
+                if (!nombreCliente && pedido.primernombre) {
+                    nombreCliente = `${pedido.primernombre} ${pedido.primerapellido ?? ''}`.trim();
+                }
+                if (!nombreCliente) {
+                    nombreCliente = `Cliente #${pedido.idcliente ?? pedido.idCliente}`;
+                }
+
+                infoIdPedido.textContent     = idPed;
+                infoIdCotizacion.textContent = idCotiz;
+                infoFechaPedido.textContent  = fecha;
+                infoTotalPedido.textContent  = total;
+                infoEstadoPedido.textContent = estado;
+                infoCliente.textContent      = nombreCliente;
+
+            } catch (err) {
+                console.error(err);
+                alert('Error al cargar información del pedido');
+            }
+        }
+
+        // ========= CARGAR DETALLES DEL PEDIDO =========
+        async function fetchDetallesPedido() {
+            try {
+                const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallepedido/${idPedido}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('Error al obtener detalles del pedido');
+                }
+
+                detallesTableBody.innerHTML = '';
+
+                data.data.forEach(det => {
+                    const idDetalle   = det.iddetallepedido ?? det.idDetallePedido;
+                    const idProducto  = det.idproducto ?? det.idProducto;
+                    const cantidad    = det.cantidad;
+                    const precioUnit  = det.preciounitario ?? det.precioUnitario;
+                    const subtotal    = det.valorsubtotal ?? det.valorSubtotal;
+                    const nombreProd  = det.nombreproducto ?? det.nombreProducto ?? `Producto #${idProducto}`;
+
+                    const row = detallesTableBody.insertRow();
+                    row.setAttribute('data-id-detalle', idDetalle);
+                    row.setAttribute('data-id-producto', idProducto);
+
+                    row.innerHTML = `
+                        <td>${idDetalle}</td>
+                        <td>${nombreProd}</td>
+                        <td>
+                            <input type="number" class="input-cantidad" value="${cantidad}" min="1">
+                        </td>
+                        <td>
+                            <input type="number" class="input-precio" value="${precioUnit}" min="0" step="0.01">
+                        </td>
+                        <td>
+                            <input type="text" class="input-subtotal" value="${subtotal}" readonly>
+                        </td>
+                        <td>
+                            <button class="btn-actualizar">Actualizar</button>
+                            <button class="btn-eliminar">Eliminar</button>
+                        </td>
+                    `;
+
+                    const inputCantidad = row.querySelector('.input-cantidad');
+                    const inputPrecio   = row.querySelector('.input-precio');
+                    const inputSubtotal = row.querySelector('.input-subtotal');
+                    const btnActualizar = row.querySelector('.btn-actualizar');
+                    const btnEliminar   = row.querySelector('.btn-eliminar');
+
+                    function recalcularFila() {
+                        const c = parseFloat(inputCantidad.value) || 0;
+                        const p = parseFloat(inputPrecio.value) || 0;
+                        inputSubtotal.value = (c * p).toFixed(2);
+                    }
+
+                    inputCantidad.addEventListener('input', recalcularFila);
+                    inputPrecio.addEventListener('input', recalcularFila);
+
+                    btnActualizar.addEventListener('click', () => {
+                        actualizarDetalle(idDetalle, inputCantidad.value, inputPrecio.value, inputSubtotal.value);
+                    });
+
+                    btnEliminar.addEventListener('click', () => {
+                        eliminarDetalle(idDetalle);
+                    });
+                });
+
+            } catch (err) {
+                console.error(err);
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Error al cargar los detalles del pedido.';
+            }
+        }
+
+        // ========= ACTUALIZAR DETALLE =========
+        async function actualizarDetalle(idDetalle, cantidad, precioUnitario, subtotal) {
+            try {
+                const row = document.querySelector(`tr[data-id-detalle="${idDetalle}"]`);
+                const idProducto = row ? row.getAttribute('data-id-producto') : null;
+
+                const body = {
+                    idPedido: parseInt(idPedido, 10),
+                    idProducto: idProducto ? parseInt(idProducto, 10) : null,
+                    cantidad: parseInt(cantidad, 10),
+                    precioUnitario: parseFloat(precioUnitario),
+                    valorSubtotal: parseFloat(subtotal)
+                };
+
+                const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallepedido/${idDetalle}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const textResp = await res.text();
+                console.log('Resp actualizar detalle pedido:', textResp);
+
+                const trimmed = textResp.trim();
+                if (!trimmed.startsWith('{')) {
+                    console.error('Respuesta no es JSON puro al actualizar detalle:', trimmed);
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = 'Error al procesar la respuesta del servidor (no es JSON válido).';
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(trimmed);
+                } catch (err) {
+                    console.error('Error parseando JSON actualizar detalle:', err);
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = 'Error al procesar la respuesta del servidor.';
+                    return;
+                }
+
+                if (data.status === 'success') {
+                    messageEl.style.color = 'green';
+                    messageEl.textContent = 'Detalle de pedido actualizado correctamente';
+                    await fetchPedidoInfo();
+                    await fetchDetallesPedido();
+                } else {
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = data.message || 'Error al actualizar el detalle';
+                }
+
+            } catch (err) {
+                console.error(err);
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Error al actualizar el detalle de pedido';
+            }
+        }
+
+        // ========= ELIMINAR DETALLE =========
+        async function eliminarDetalle(idDetalle) {
+    if (!confirm('¿Seguro que deseas eliminar este detalle?')) return;
+
+    try {
+        const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallepedido/${idDetalle}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const textResp = await res.text();
+        console.log('Resp eliminar detalle pedido:', textResp);
+
+        const trimmed = textResp.trim();
+        if (!trimmed.startsWith('{')) {
+            console.error('Respuesta no es JSON puro al eliminar detalle:', trimmed);
+            messageEl.style.color = 'red';
+            messageEl.textContent = 'Error al procesar la respuesta del servidor (no es JSON válido).';
+            return;
+        }
+
+        let data;
+        try {
+            data = JSON.parse(trimmed);
+        } catch (err) {
+            console.error('Error parseando JSON eliminar detalle:', err);
+            messageEl.style.color = 'red';
+            messageEl.textContent = 'Error al procesar la respuesta del servidor.';
+            return;
+        }
+
+        if (data.status === 'success') {
+            messageEl.style.color = 'green';
+            messageEl.textContent = 'Detalle eliminado correctamente';
+            await fetchPedidoInfo();
+            await fetchDetallesPedido();
+        } else {
+            messageEl.style.color = 'red';
+            messageEl.textContent = data.message || 'Error al eliminar el detalle';
+        }
+
+    } catch (err) {
+        console.error(err);
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Error al eliminar el detalle de pedido';
+    }
+}
+
+
+        // ========= CARGAR PRODUCTOS (CATÁLOGO + COTIZACIÓN) =========
+        async function fetchProductos() {
+            try {
+                // 1) Traer TODO el catálogo de productos
+                const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.elemento', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+
+                if (data.status !== 'success') {
+                    throw new Error('No se pudieron obtener los productos');
+                }
+
+                productosCache = Array.isArray(data.data) ? data.data : [];
+
+                // 2) Si el pedido tiene cotización asociada, traer sus detalles
+                productosCotizados = [];
+                if (idCotizacionPedido) {
+    try {
+        console.log('Id cotización del pedido:', idCotizacionPedido);
+
+        const resDet = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallecotizacion/${idCotizacionPedido}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const dataDet = await resDet.json();
+        console.log('Respuesta detalles cotización para el pedido:', dataDet);
+
+        if (dataDet.status === 'success' && Array.isArray(dataDet.data)) {
+            productosCotizados = dataDet.data.map(det => {
+                const idProd = det.idproducto ?? det.idProducto;
+                const nombreProd = det.nombreproducto ?? det.nombreProducto ?? `Producto #${idProd}`;
+                return {
+                    idProducto: idProd,
+                    nombreProducto: nombreProd
+                };
+            });
+            console.log('Productos cotizados detectados:', productosCotizados);
+        } else {
+            console.warn('No llegaron productos cotizados o status != success');
+        }
+    } catch (errInner) {
+        console.error('Error cargando productos cotizados:', errInner);
+    }
+}
+
+                // 3) Construir el <select>:
+                //    - optgroup "Productos de la cotización"
+                //    - optgroup "Otros productos"
+                productoNuevoSelect.innerHTML = '<option value="">--Seleccione--</option>';
+
+                if (productosCotizados.length > 0) {
+                    const optGroupCot = document.createElement('optgroup');
+                    optGroupCot.label = 'Productos de la cotización';
+                    productosCotizados.forEach(pc => {
+                        const option = document.createElement('option');
+                        option.value = pc.idProducto;
+                        option.textContent = pc.nombreProducto;
+                        optGroupCot.appendChild(option);
+                    });
+                    productoNuevoSelect.appendChild(optGroupCot);
+                }
+
+                // Ids ya usados en la cotización (para no repetir en "otros productos")
+                const idsCotizados = new Set(
+                    productosCotizados.map(pc => String(pc.idProducto))
+                );
+
+                const optGroupOtros = document.createElement('optgroup');
+                optGroupOtros.label = 'Otros productos';
+
+                productosCache.forEach(prod => {
+                    const idStr = String(prod.idelemento);
+                    if (!idsCotizados.has(idStr)) {
+                        const option = document.createElement('option');
+                        option.value = prod.idelemento;
+                        option.textContent = prod.nombre;
+                        optGroupOtros.appendChild(option);
+                    }
+                });
+
+                productoNuevoSelect.appendChild(optGroupOtros);
+
+            } catch (err) {
+                console.error(err);
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Error al cargar productos para nuevo detalle';
+            }
+        }
+
+        productoNuevoSelect.addEventListener('change', () => {
+            const idProd = productoNuevoSelect.value;
+            const prod = productosCache.find(p => String(p.idelemento) === String(idProd));
+            if (prod) {
+                precioUnitarioNuevo.value = prod.precio_venta_ac;
+                recalcularNuevoSubtotal();
+            } else {
+                // Por si el producto viene sólo de detalleCotización y no coincide por alguna razón
+                precioUnitarioNuevo.value = '';
+                subtotalNuevoInput.value = '';
+            }
+        });
+
+        function recalcularNuevoSubtotal() {
+            const c = parseFloat(cantidadNuevaInput.value) || 0;
+            const p = parseFloat(precioUnitarioNuevo.value) || 0;
+            subtotalNuevoInput.value = (c * p).toFixed(2);
+        }
+
+        cantidadNuevaInput.addEventListener('input', recalcularNuevoSubtotal);
+        precioUnitarioNuevo.addEventListener('input', recalcularNuevoSubtotal);
+
+        // ========= AGREGAR NUEVO DETALLE =========
+        btnAgregarDetalleNuevo.addEventListener('click', async () => {
+            const idProducto = productoNuevoSelect.value;
+            const cantidad  = cantidadNuevaInput.value;
+            const precio    = precioUnitarioNuevo.value;
+
+            if (!idProducto || !cantidad || !precio) {
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Completa todos los campos del nuevo detalle.';
+                return;
+            }
+
+            const subtotal = parseFloat(cantidad) * parseFloat(precio);
+
+            const body = {
+                idPedido: parseInt(idPedido, 10),
+                idProducto: parseInt(idProducto, 10),
+                cantidad: parseInt(cantidad, 10),
+                precioUnitario: parseFloat(precio),
+                valorSubtotal: subtotal
+            };
+
+            try {
+                const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.detallepedido', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const textResp = await res.text();
+                console.log('Resp agregar nuevo detalle pedido:', textResp);
+
+                const trimmed = textResp.trim();
+                if (!trimmed.startsWith('{')) {
+                    console.error('Respuesta no es JSON puro al agregar detalle:', trimmed);
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = 'Error al procesar la respuesta del servidor (no es JSON válido).';
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(trimmed);
+                } catch (err) {
+                    console.error('Error parseando JSON nuevo detalle:', err);
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = 'Error al procesar la respuesta del servidor.';
+                    return;
+                }
+
+                if (data.status === 'success') {
+                    messageEl.style.color = 'green';
+                    messageEl.textContent = 'Nuevo detalle agregado correctamente';
+                    cantidadNuevaInput.value = '';
+                    precioUnitarioNuevo.value = '';
+                    subtotalNuevoInput.value = '';
+                    productoNuevoSelect.value = '';
+                    await fetchPedidoInfo();
+                    await fetchDetallesPedido();
+                } else {
+                    messageEl.style.color = 'red';
+                    messageEl.textContent = data.message || 'Error al agregar el detalle';
+                }
+
+            } catch (err) {
+                console.error(err);
+                messageEl.style.color = 'red';
+                messageEl.textContent = 'Error al agregar el detalle de pedido';
+            }
+        });
+
+        // ========= INICIALIZAR =========
+        (async () => {
+            await fetchPedidoInfo();      // aquí se llena idCotizacionPedido
+            await fetchDetallesPedido();
+            await fetchProductos();       // aquí usamos idCotizacionPedido para armar el select
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Listar Clientes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Slider container (vertical) */
+        .slider-container {
+            width: 100%;
+            height: 400px;  /* Ajusta la altura del slider */
+            overflow-y: auto;  /* Permite el desplazamiento vertical */
+            margin-top: 20px;
+        }
+
+        .slider-container table {
+            width: 100%;
+            min-width: 800px;  /* Ajusta el ancho mínimo de la tabla */
+        }
+
+        .slider-container table thead {
+            background-color: #f2f2f2;
+        }
+
+        .slider-container table th, .slider-container table td {
+            min-width: 150px; /* Asegura que las celdas tengan un tamaño adecuado */
+        }
+
+        /* Estilo para la barra de desplazamiento */
+        .slider-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .slider-container::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 4px;
+        }
+
+        .slider-container::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Listar Clientes</h1>
+
+    <!-- Slider container para clientes -->
+    <div class="slider-container">
+        <table id="clientsTable">
+            <thead>
+                <tr>
+                    <th>Tipo Cliente</th>
+                    <th>Tipo Documento</th>
+                    <th>Número Documento</th>
+                    <th>Nombre / Razón Social</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se insertarán los clientes -->
+            </tbody>
+        </table>
+    </div>
+
+<script>
+    const token = localStorage.getItem('authToken');
+    const clientsTable = document.getElementById('clientsTable').getElementsByTagName('tbody')[0];
+
+    // Validar token
+    if (!token) {
+        window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/login.html';
+    }
+
+    // Función para cargar los clientes
+    async function fetchClients() {
+        const url = `/proyectoFinalIS2/co.edu.unbosque.cliente`; // Aquí quitamos la paginación y la búsqueda
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // Verificar el estado de la respuesta
+            if (!response.ok) {
+                throw new Error(`Error en la respuesta: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Verificar que el estado sea "success"
+            if (data.status !== 'success') {
+                throw new Error('Respuesta con estado no exitoso');
+            }
+
+            // Limpiar la tabla antes de insertar nuevos datos
+            clientsTable.innerHTML = '';
+
+            // Insertar clientes en la tabla
+            data.data.forEach(client => {
+                let nombreCliente = '';
+                if (client.idtipocliente === 1) {
+                    nombreCliente = `${client.primernombre || ''} ${client.segundonombre || ''} ${client.primerapellido || ''} ${client.segundoapellido || ''}`.trim();
+                    nombreCliente = nombreCliente || 'No definido';
+                } else if (client.idtipocliente === 2) {
+                    nombreCliente = client.razonsocial || 'No definido';
+                }
+
+                const tipoDocumento = client.nombretipodocumento || 'No definido';
+                const tipoCliente = client.nombretipocliente || 'No definido';
+                const numeroDocumento = client.numerodocumento || 'No definido';
+                const telefono = client.telefono || 'No definido';
+                const correo = client.correo || 'No definido';
+
+                const row = clientsTable.insertRow();
+                row.setAttribute('data-id', client.idcliente);
+                row.innerHTML = `
+                    <td>${tipoCliente}</td>
+                    <td>${tipoDocumento}</td>
+                    <td>${numeroDocumento}</td>
+                    <td>${nombreCliente}</td>
+                    <td>${telefono}</td>
+                    <td>${correo}</td>
+                    <td>
+                        <button onclick="editClient(${client.idcliente})">Editar</button>
+                        <button onclick="deleteClient(${client.idcliente})">Eliminar</button>
+                    </td>
+                `;
+            });
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`Error al obtener los datos: ${error.message}`);
+        }
+    }
+
+    // Función para editar cliente
+    function editClient(id) {
+        window.location.href = `/proyectoFinalIS2/co.edu.unbosque.views/editClient.html?id=${id}`;
+    }
+
+    // Función para eliminar cliente
+    function deleteClient(id) {
+        if (confirm('¿Estás seguro de eliminar este cliente?')) {
+            fetch(`/proyectoFinalIS2/co.edu.unbosque.cliente/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Cliente eliminado');
+                    fetchClients();  // Recargar los clientes después de la eliminación
+                } else {
+                    alert('Error al eliminar cliente');
+                }
+            });
+        }
+    }
+
+    fetchClients();  // Cargar clientes al inicio
+</script>
+
+</body>
+</html>

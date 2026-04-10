@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reportes del Sistema</title>
+    <style>
+        :root {
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --primary: #0069d9;
+            --primary-dark: #0052aa;
+            --accent: #17a2b8;
+            --danger: #dc3545;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 20px auto 30px;
+            padding: 0 15px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .user-info {
+            text-align: right;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .user-info span {
+            display: block;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #e2e6ea;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d6d8db;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background-color: #b52a37;
+        }
+
+        .intro-card {
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            padding: 15px 18px;
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .intro-card h2 {
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .intro-card p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .intro-list {
+            margin-top: 8px;
+            padding-left: 18px;
+            font-size: 14px;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 15px;
+        }
+
+        .report-card {
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            padding: 14px 16px 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .report-title {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .report-tag {
+            font-size: 11px;
+            padding: 3px 7px;
+            border-radius: 10px;
+            background-color: #e9f5ff;
+            color: #0052aa;
+            white-space: nowrap;
+        }
+
+        .report-body {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .report-body p {
+            margin: 4px 0;
+        }
+
+        .report-body ul {
+            margin: 4px 0 0 16px;
+            padding-left: 0;
+        }
+
+        .report-body li {
+            margin-bottom: 2px;
+        }
+
+        .report-footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-link {
+            display: inline-block;
+            text-decoration: none;
+            background-color: var(--primary);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .btn-link:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .hint {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .badge-role {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 10px;
+            background-color: #e9f7ef;
+            color: #155724;
+        }
+
+        .small-note {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .user-info {
+                text-align: left;
+            }
+
+            .top-actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <h1>Reportes del sistema</h1>
+        </div>
+        <div class="user-info">
+            <span id="userNameLabel">Usuario: -</span>
+            <span id="userRoleLabel">Rol: -</span>
+            <span class="badge-role" id="roleBadge">Solo lectura de reportes</span>
+        </div>
+    </header>
+
+    <div class="top-actions">
+        <button class="btn-secondary" id="btnBack">Volver al Dashboard</button>
+        <button class="btn-danger" id="btnLogout">Cerrar sesión</button>
+    </div>
+
+    <section class="intro-card">
+        <h2>¿Qué vas a encontrar aquí?</h2>
+        <p>
+            En esta sección puedes generar reportes en <strong>PDF</strong> que ayudan a la administración
+            a entender mejor el comportamiento de clientes, cotizaciones, pedidos e inventario.
+        </p>
+        <ul class="intro-list">
+            <li>Cualquier usuario con rol <strong>Administrador</strong> o <strong>Vendedor</strong> puede descargar los reportes.</li>
+            <li>Los reportes se generan en tiempo real a partir de la información registrada en el sistema.</li>
+            <li>Al abrir un reporte se descargará o mostrará directamente el PDF en una nueva pestaña.</li>
+        </ul>
+        <p class="small-note">
+            Nota: la <strong>auditoría</strong> (historial de acciones) solo está disponible para el administrador desde el Dashboard.
+        </p>
+    </section>
+
+    <section class="report-grid">
+        <!-- 1. Clientes naturales vs empresas -->
+        <article class="report-card">
+            <div>
+                <div class="report-header">
+                    <h3 class="report-title">1. Clientes naturales vs empresas</h3>
+                    <span class="report-tag">Enfoque: Clientes</span>
+                </div>
+                <div class="report-body">
+                    <p>
+                        Muestra cuántos clientes son <strong>persona natural</strong> y cuántos son
+                        <strong>empresa (razón social)</strong>.
+                    </p>
+                    <ul>
+                        <li>Ayuda a saber si el negocio está más orientado a retail o a clientes corporativos.</li>
+                        <li>Útil para definir campañas, ofertas y tipo de comunicación.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <a class="btn-link"
+                   href="/proyectoFinalIS2/co.edu.unbosque.report/rpt_clientes_tipo.php"
+                   target="_blank">
+                    Ver reporte en PDF
+                </a>
+                <span class="hint">Fuente: tabla cliente</span>
+            </div>
+        </article>
+
+        <!-- 2. Cotizaciones vs pedidos -->
+        <article class="report-card">
+            <div>
+                <div class="report-header">
+                    <h3 class="report-title">2. Cotizaciones vs pedidos</h3>
+                    <span class="report-tag">Enfoque: Conversión</span>
+                </div>
+                <div class="report-body">
+                    <p>
+                        Compara la <strong>cantidad total de cotizaciones</strong> con la
+                        <strong>cantidad total de pedidos</strong>.
+                    </p>
+                    <ul>
+                        <li>Permite estimar qué tanto se convierten las cotizaciones en pedidos.</li>
+                        <li>Si hay muchas cotizaciones y pocos pedidos, algo está fallando en precio, seguimiento o servicio.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <a class="btn-link"
+                   href="/proyectoFinalIS2/co.edu.unbosque.report/rpt_cot_vs_ped.php"
+                   target="_blank">
+                    Ver reporte en PDF
+                </a>
+                <span class="hint">Fuente: cotización / pedido</span>
+            </div>
+        </article>
+
+        <!-- 3. TOP productos cotizados vs pedidos -->
+        <article class="report-card">
+            <div>
+                <div class="report-header">
+                    <h3 class="report-title">3. TOP productos cotizados vs pedidos confirmados</h3>
+                    <span class="report-tag">Enfoque: Productos</span>
+                </div>
+                <div class="report-body">
+                    <p>
+                        Compara los <strong>productos más cotizados</strong> con los
+                        <strong>productos más presentes en pedidos confirmados</strong>.
+                    </p>
+                    <ul>
+                        <li>Detecta productos muy cotizados pero poco pedidos (posibles problemas de precio o stock).</li>
+                        <li>Identifica productos estratégicos que son tanto cotizados como confirmados.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <a class="btn-link"
+                   href="/proyectoFinalIS2/co.edu.unbosque.report/rpt_top_productos.php"
+                   target="_blank">
+                    Ver reporte en PDF
+                </a>
+                <span class="hint">Fuente: detalle_cotizacion / detalle_pedido / elemento</span>
+            </div>
+        </article>
+
+        <!-- 4. Pedidos cancelados -->
+        <article class="report-card">
+            <div>
+                <div class="report-header">
+                    <h3 class="report-title">4. Pedidos cancelados</h3>
+                    <span class="report-tag">Enfoque: Riesgo</span>
+                </div>
+                <div class="report-body">
+                    <p>
+                        Lista cuántos pedidos han sido <strong>cancelados</strong> por cliente y el valor asociado.
+                    </p>
+                    <ul>
+                        <li>Sirve para detectar clientes que piden con frecuencia y luego cancelan.</li>
+                        <li>Ayuda a entender el impacto económico de las cancelaciones.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <a class="btn-link"
+                   href="/proyectoFinalIS2/co.edu.unbosque.report/rpt_pedidos_cancelados.php"
+                   target="_blank">
+                    Ver reporte en PDF
+                </a>
+                <span class="hint">Fuente: pedido / cliente (+ vendedor opcional)</span>
+            </div>
+        </article>
+
+        <!-- 5. Resumen pedidos confirmados -->
+        <article class="report-card">
+            <div>
+                <div class="report-header">
+                    <h3 class="report-title">5. Resumen de pedidos confirmados</h3>
+                    <span class="report-tag">Enfoque: Volumen</span>
+                </div>
+                <div class="report-body">
+                    <p>
+                        Resume los <strong>pedidos en estado Confirmado</strong>:
+                        cantidad, total, promedio, pedido más alto y más bajo.
+                    </p>
+                    <ul>
+                        <li>Muestra el volumen que efectivamente llega a la etapa de confirmación.</li>
+                        <li>Ayuda a estimar el “ticket promedio” de los pedidos confirmados.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <a class="btn-link"
+                   href="/proyectoFinalIS2/co.edu.unbosque.report/rpt_margen_confirmados.php"
+                   target="_blank">
+                    Ver reporte en PDF
+                </a>
+                <span class="hint">Fuente: pedido (estado Confirmado)</span>
+            </div>
+        </article>
+
+        <!-- 6. Pedidos confirmados por mes -->
+        <article class="report-card">
+            <div>
+                <div class="report-header">
+                    <h3 class="report-title">6. Pedidos confirmados por mes</h3>
+                    <span class="report-tag">Enfoque: Tendencia</span>
+                </div>
+                <div class="report-body">
+                    <p>
+                        Agrupa los <strong>pedidos confirmados por mes</strong>, mostrando cantidad y valor total.
+                    </p>
+                    <ul>
+                        <li>Ayuda a ver si el número de pedidos confirmados va en aumento, estable o en caída.</li>
+                        <li>Útil para identificar meses fuertes y meses débiles.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <a class="btn-link"
+                   href="/proyectoFinalIS2/co.edu.unbosque.report/rpt_pedidos_confirmados_mes.php"
+                   target="_blank">
+                    Ver reporte en PDF
+                </a>
+                <span class="hint">Fuente: pedido (Confirmado, agrupado por mes)</span>
+            </div>
+        </article>
+
+        <!-- 7. Rotación de inventario -->
+        <article class="report-card">
+            <div>
+                <div class="report-header">
+                    <h3 class="report-title">7. Rotación de inventario por producto</h3>
+                    <span class="report-tag">Enfoque: Inventario</span>
+                </div>
+                <div class="report-body">
+                    <p>
+                        Muestra por cada producto: <strong>cantidad total vendida</strong> (en pedidos confirmados)
+                        y <strong>stock actual</strong>.
+                    </p>
+                    <ul>
+                        <li>Clasifica los productos en alta, media, baja rotación o sin rotación.</li>
+                        <li>Ayuda a tomar decisiones sobre compras, promociones y posibles descontinuaciones.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <a class="btn-link"
+                   href="/proyectoFinalIS2/co.edu.unbosque.report/rpt_rotacion_inventario.php"
+                   target="_blank">
+                    Ver reporte en PDF
+                </a>
+                <span class="hint">Fuente: elemento / detalle_pedido / pedido</span>
+            </div>
+        </article>
+    </section>
+</div>
+
+<script>
+    const token    = localStorage.getItem('authToken');
+    const username = localStorage.getItem('username');
+    const roleId   = localStorage.getItem('roleId');
+
+    // Si no hay token, redirigimos al login
+    if (!token) {
+        window.location.href = 'login.html';
+    }
+
+    const userNameLabel = document.getElementById('userNameLabel');
+    const userRoleLabel = document.getElementById('userRoleLabel');
+    const roleBadge     = document.getElementById('roleBadge');
+
+    userNameLabel.textContent = `Usuario: ${username || '-'}`;
+
+    let roleText = 'Desconocido';
+    if (roleId === '1') {
+        roleText = 'Administrador';
+        roleBadge.textContent = 'Administrador: acceso total a reportes';
+    } else if (roleId === '2') {
+        roleText = 'Vendedor';
+        roleBadge.textContent = 'Vendedor: acceso a reportes comerciales';
+    } else {
+        // Si el rol no es 1 ni 2, lo sacamos por seguridad
+        alert('No tienes permisos para ver los reportes.');
+        window.location.href = 'dashboard.html';
+    }
+    userRoleLabel.textContent = `Rol: ${roleText}`;
+
+    // Botones
+    document.getElementById('btnBack').addEventListener('click', () => {
+        window.location.href = 'dashboard.html';
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('username');
+        localStorage.removeItem('roleId');
+        window.location.href = 'login.html';
+    });
+</script>
+</body>
+</html>

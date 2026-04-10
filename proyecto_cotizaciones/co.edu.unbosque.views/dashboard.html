@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .menu {
+            margin-top: 20px;
+        }
+        .menu-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .menu-section h2 {
+            margin-top: 0;
+        }
+        .menu-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .menu-section li {
+            margin: 5px 0;
+        }
+        .menu-section a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .menu-section a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dashboard</h1>
+
+    <p id="welcome"></p>
+    <p id="roleText"></p>
+
+    <button id="logoutBtn">Cerrar sesión</button>
+
+    <div class="menu">
+        <!-- Gestión de clientes (solo vendedor) -->
+        <div class="menu-section" id="clientesSection" style="display:none;">
+            <h2>Gestión de clientes</h2>
+            <ul>
+                <li><a href="createClient.html">Crear cliente</a></li>
+                <li><a href="listClients.html">Listar / buscar clientes</a></li>
+            </ul>
+        </div>
+
+        <!-- Gestión comercial (solo vendedor) -->
+        <div class="menu-section" id="ventasSection" style="display:none;">
+            <h2>Gestión comercial</h2>
+            <ul>
+                <li><a href="cotizacion.html">Crear / gestionar cotizaciones</a></li>
+                <li><a href="pedido.html">Crear / gestionar pedidos</a></li>
+            </ul>
+        </div>
+
+        <!-- Reportes PDF (vendedor y admin) -->
+        <div class="menu-section" id="reportesSection" style="display:none;">
+            <h2>Reportes e indicadores (PDF)</h2>
+            <ul>
+                <!-- Luego aquí puedes poner varios enlaces a reportes específicos -->
+                <li><a href="reportes.html">Ver / descargar reportes en PDF</a></li>
+            </ul>
+        </div>
+
+        <!-- Auditoría (solo admin) -->
+        <div class="menu-section" id="auditoriaSection" style="display:none;">
+            <h2>Historial / Auditoría del sistema</h2>
+            <ul>
+                <li><a href="auditoria.html">Ver historial de operaciones</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const token    = localStorage.getItem('authToken');
+        const username = localStorage.getItem('username');
+        const roleId   = localStorage.getItem('roleId');
+
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        const welcomeEl        = document.getElementById('welcome');
+        const roleTextEl       = document.getElementById('roleText');
+        const clientesSection  = document.getElementById('clientesSection');
+        const ventasSection    = document.getElementById('ventasSection');
+        const reportesSection  = document.getElementById('reportesSection');
+        const auditoriaSection = document.getElementById('auditoriaSection');
+
+        welcomeEl.textContent = `Bienvenido, ${username || 'usuario'}`;
+
+        let roleText = 'Rol desconocido';
+
+        if (roleId === '1') {
+            roleText = 'Administrador';
+        } else if (roleId === '2') {
+            roleText = 'Vendedor';
+        }
+
+        roleTextEl.textContent = `Tu rol es: ${roleText}`;
+
+        // Visibilidad según rol
+        if (roleId === '2') {
+            // Vendedor: ve clientes, ventas y reportes PDF
+            clientesSection.style.display  = 'block';
+            ventasSection.style.display    = 'block';
+            reportesSection.style.display  = 'block';
+        }
+
+        if (roleId === '1') {
+            // Admin: solo auditoría + reportes PDF
+            auditoriaSection.style.display = 'block';
+            reportesSection.style.display  = 'block';
+            // Aseguramos que no vea las secciones de vendedor
+            clientesSection.style.display  = 'none';
+            ventasSection.style.display    = 'none';
+        }
+
+        // Cerrar sesión
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+            localStorage.removeItem('roleId');
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>

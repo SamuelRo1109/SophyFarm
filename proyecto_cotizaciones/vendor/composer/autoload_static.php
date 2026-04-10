@@ -11,13 +11,59 @@ class ComposerStaticInitfc9eef1895208b6604d51e3d48109ec3
     );
 
     public static $prefixLengthsPsr4 = array (
+        'c' => 
+        array (
+            'co\\edu\\unbosque\\utils\\' => 22,
+            'co\\edu\\unbosque\\service\\' => 24,
+            'co\\edu\\unbosque\\route\\' => 22,
+            'co\\edu\\unbosque\\model\\' => 22,
+            'co\\edu\\unbosque\\middleware\\' => 27,
+            'co\\edu\\unbosque\\controller\\' => 27,
+        ),
+        'P' => 
+        array (
+            'PHPMailer\\PHPMailer\\' => 20,
+        ),
         'F' => 
         array (
+            'Firebase\\JWT\\' => 13,
             'FastRoute\\' => 10,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'co\\edu\\unbosque\\utils\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/co.edu.unbosque.utils',
+        ),
+        'co\\edu\\unbosque\\service\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/co.edu.unbosque.service',
+        ),
+        'co\\edu\\unbosque\\route\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/co.edu.unbosque.route',
+        ),
+        'co\\edu\\unbosque\\model\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/co.edu.unbosque.model',
+        ),
+        'co\\edu\\unbosque\\middleware\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/co.edu.unbosque.middleware',
+        ),
+        'co\\edu\\unbosque\\controller\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/co.edu.unbosque.controller',
+        ),
+        'PHPMailer\\PHPMailer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
+        ),
+        'Firebase\\JWT\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
+        ),
         'FastRoute\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/fast-route/src',

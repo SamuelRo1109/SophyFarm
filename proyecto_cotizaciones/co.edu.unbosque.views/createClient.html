@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Cliente</title>
+</head>
+<body>
+    <h1>Crear Cliente</h1>
+
+    <form id="clientForm">
+        <label>Tipo de cliente:</label>
+        <select id="idTipoCliente" required>
+            <option value="">--Seleccione--</option>
+            <option value="1">Natural</option>
+            <option value="2">Empresa</option>
+        </select><br><br>
+
+        <label>Tipo de documento:</label>
+        <select id="idTipoDocumento" required>
+            <option value="">--Seleccione--</option>
+            <option value="1">Cédula de ciudadanía</option>
+            <option value="2">Cédula de extranjería</option>
+            <option value="3">NIT</option>
+            <option value="4">Pasaporte</option>
+        </select><br><br>
+
+        <label>Número de documento:</label>
+        <input type="text" id="numeroDocumento" required><br><br>
+
+        <div id="naturalFields">
+            <h3>Datos persona natural</h3>
+            <label>Primer nombre:</label>
+            <input type="text" id="primerNombre"><br><br>
+
+            <label>Segundo nombre:</label>
+            <input type="text" id="segundoNombre"><br><br>
+
+            <label>Primer apellido:</label>
+            <input type="text" id="primerApellido"><br><br>
+
+            <label>Segundo apellido:</label>
+            <input type="text" id="segundoApellido"><br><br>
+        </div>
+
+        <div id="empresaFields" style="display:none;">
+            <h3>Datos empresa</h3>
+            <label>Razón social:</label>
+            <input type="text" id="razonSocial"><br><br>
+        </div>
+
+        <label>Teléfono:</label>
+        <input type="text" id="telefono"><br><br>
+
+        <label>Correo:</label>
+        <input type="email" id="correo"><br><br>
+
+        <label>Dirección:</label>
+        <input type="text" id="direccion"><br><br>
+
+        <label>Saldo actual:</label>
+        <input type="number" step="0.01" id="saldoActual" value="0"><br><br>
+
+        <label>Cupo crédito:</label>
+        <input type="number" step="0.01" id="cupoCredito" value="0"><br><br>
+
+        <button type="submit">Guardar cliente</button>
+    </form>
+
+    <p id="message"></p>
+
+    <script>
+    const tipoClienteSelect = document.getElementById('idTipoCliente');
+    const tipoDocumentoSelect = document.getElementById('idTipoDocumento');
+    const naturalFields = document.getElementById('naturalFields');
+    const empresaFields = document.getElementById('empresaFields');
+
+    // Mostrar/ocultar campos según tipo de cliente
+    tipoClienteSelect.addEventListener('change', () => {
+        const value = tipoClienteSelect.value;
+        
+        // Si es cliente Empresa
+        if (value === '2') {
+            empresaFields.style.display = 'block';
+            naturalFields.style.display = 'none';
+            // Solo habilitar NIT para empresa
+            tipoDocumentoSelect.innerHTML = `<option value="3">NIT</option>`;
+        } else if (value === '1') {
+            empresaFields.style.display = 'none';
+            naturalFields.style.display = 'block';
+            // Habilitar los 3 tipos de documentos para cliente natural
+            tipoDocumentoSelect.innerHTML = `
+                <option value="1">Cédula de ciudadanía</option>
+                <option value="2">Cédula de extranjería</option>
+                <option value="4">Pasaporte</option>
+            `;
+        } else {
+            empresaFields.style.display = 'none';
+            naturalFields.style.display = 'none';
+            tipoDocumentoSelect.innerHTML = `<option value="">--Seleccione--</option>`;
+        }
+    });
+
+      const form = document.getElementById('clientForm');
+    const messageEl = document.getElementById('message');
+
+   form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    messageEl.textContent = '';
+
+    // Obtenemos el token de localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        alert('Sesión expirada. Inicia sesión de nuevo.');
+        window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/login.html';  // Redirigir al login si no hay token
+        return;
+    }
+
+    // Inicializamos el cuerpo de la solicitud
+    let body = {
+        idTipoCliente:   document.getElementById('idTipoCliente').value,  // Verifica este campo
+        idTipoDocumento: document.getElementById('idTipoDocumento').value,
+        numeroDocumento: document.getElementById('numeroDocumento').value,
+        telefono:        document.getElementById('telefono').value,
+        correo:          document.getElementById('correo').value,
+        direccion:       document.getElementById('direccion').value,
+        saldoActual:     document.getElementById('saldoActual').value,
+        cupoCredito:     document.getElementById('cupoCredito').value
+    };
+
+    // Verificar que el campo idTipoCliente no esté vacío
+    if (!body.idTipoCliente) {
+        alert("El tipo de cliente es obligatorio");
+        return;
+    }
+
+    // Si es un cliente natural, agregamos los campos de persona natural
+    if (document.getElementById('idTipoCliente').value === '1') {
+        body = {
+            ...body,
+            primerNombre:    document.getElementById('primerNombre').value,
+            segundoNombre:   document.getElementById('segundoNombre').value,
+            primerApellido:  document.getElementById('primerApellido').value,
+            segundoApellido: document.getElementById('segundoApellido').value,
+        };
+    }
+
+    // Si es una empresa, agregamos el campo de razón social
+    if (document.getElementById('idTipoCliente').value === '2') {
+        body = {
+            ...body,
+            razonSocial: document.getElementById('razonSocial').value,
+        };
+    }
+
+    // Imprimir el cuerpo de la solicitud para depuración
+    console.log('JSON enviado al backend:', JSON.stringify(body));
+
+    try {
+        // Realizamos la solicitud POST para crear el cliente
+        const resp = await fetch('/proyectoFinalIS2/co.edu.unbosque.cliente', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',  // Indicamos que el cuerpo de la solicitud es JSON
+                'Authorization': 'Bearer ' + token  // Enviamos el token en el encabezado
+            },
+            body: JSON.stringify(body)  // Convertimos el cuerpo a JSON
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || data.status !== 'success') {
+            messageEl.style.color = 'red';
+            messageEl.textContent = data.message || 'Error al crear cliente';  // Mostramos un mensaje de error
+            return;
+        }
+
+        // Si el cliente fue creado exitosamente
+        messageEl.style.color = 'green';
+        messageEl.textContent = 'Cliente creado con ID: ' + data.idCliente;
+        form.reset();  // Limpiar el formulario
+
+    } catch (err) {
+        console.error(err);
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Error de conexión con el servidor';  // Si ocurre un error en la conexión
+    }
+});
+
+</script>
+
+</body>
+</html>

@@ -6,5 +6,13 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'co\\edu\\unbosque\\utils\\' => array($baseDir . '/co.edu.unbosque.utils'),
+    'co\\edu\\unbosque\\service\\' => array($baseDir . '/co.edu.unbosque.service'),
+    'co\\edu\\unbosque\\route\\' => array($baseDir . '/co.edu.unbosque.route'),
+    'co\\edu\\unbosque\\model\\' => array($baseDir . '/co.edu.unbosque.model'),
+    'co\\edu\\unbosque\\middleware\\' => array($baseDir . '/co.edu.unbosque.middleware'),
+    'co\\edu\\unbosque\\controller\\' => array($baseDir . '/co.edu.unbosque.controller'),
+    'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
+    'Firebase\\JWT\\' => array($vendorDir . '/firebase/php-jwt/src'),
     'FastRoute\\' => array($vendorDir . '/nikic/fast-route/src'),
 );

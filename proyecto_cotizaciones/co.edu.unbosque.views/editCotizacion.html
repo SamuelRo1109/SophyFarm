@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Cotización</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .readonly {
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+        }
+        label {
+            font-weight: bold;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .slider-container {
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .slider-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .slider-container::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 4px;
+        }
+        .slider-container::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+
+        button {
+            padding: 6px 10px;
+            margin: 2px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+        }
+
+        .btn-secondary {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+        }
+
+        .message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .add-detail-container {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Editar Cotización</h1>
+
+    <!-- RESUMEN COTIZACIÓN (solo lectura) -->
+    <form id="cotizacionSummaryForm">
+        <div class="grid-2">
+            <div>
+                <label for="idCotizacion">ID Cotización</label>
+                <input type="text" id="idCotizacion" class="readonly" readonly>
+
+                <label for="idCliente">ID Cliente</label>
+                <input type="text" id="idCliente" class="readonly" readonly>
+
+                <label for="idVendedor">ID Vendedor</label>
+                <input type="text" id="idVendedor" class="readonly" readonly>
+
+                <label for="fechaCotizacion">Fecha Cotización</label>
+                <input type="date" id="fechaCotizacion" class="readonly" readonly>
+            </div>
+
+            <div>
+                <label for="valorBruto">Valor Bruto</label>
+                <input type="text" id="valorBruto" class="readonly" readonly>
+
+                <label for="valorDescuento">Valor Descuento</label>
+                <input type="text" id="valorDescuento" class="readonly" readonly>
+
+                <label for="valorIVA">Valor IVA</label>
+                <input type="text" id="valorIVA" class="readonly" readonly>
+
+                <label for="valorNeto">Valor Neto</label>
+                <input type="text" id="valorNeto" class="readonly" readonly>
+
+                <label for="estadoCotizacion">Estado</label>
+                <input type="text" id="estadoCotizacion" class="readonly" readonly>
+            </div>
+        </div>
+    </form>
+
+    <h2>Detalles de la Cotización</h2>
+
+    <!-- TABLA DE DETALLES -->
+    <div class="slider-container">
+        <table id="detallesTable">
+            <thead>
+                <tr>
+                    <th>ID Detalle</th>
+                    <th>ID Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unitario</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Se llena con JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- AGREGAR NUEVO DETALLE -->
+    <div class="add-detail-container">
+        <h3>Agregar nuevo detalle</h3>
+        <form id="addDetailForm">
+            <label for="nuevoProducto">Producto</label>
+            <select id="nuevoProducto" required>
+                <option value="">--Seleccione--</option>
+            </select>
+
+            <label for="nuevaCantidad">Cantidad</label>
+            <input type="number" id="nuevaCantidad" required>
+
+            <label for="nuevoPrecioUnitario">Precio Unitario</label>
+            <input type="number" id="nuevoPrecioUnitario" required>
+
+            <label for="nuevoSubtotal">Subtotal</label>
+            <input type="text" id="nuevoSubtotal" class="readonly" readonly>
+
+            <button type="submit" class="btn-primary">Agregar Detalle</button>
+        </form>
+    </div>
+
+    <p id="message" class="message"></p>
+</div>
+
+<script>
+    const token = localStorage.getItem('authToken');
+    const urlParams = new URLSearchParams(window.location.search);
+    const cotizacionId = urlParams.get('id');
+
+    const messageEl = document.getElementById('message');
+    const detallesTBody = document.querySelector('#detallesTable tbody');
+
+    // Campos resumen
+    const inputIdCot = document.getElementById('idCotizacion');
+    const inputIdCliente = document.getElementById('idCliente');
+    const inputIdVendedor = document.getElementById('idVendedor');
+    const inputFechaCot = document.getElementById('fechaCotizacion');
+    const inputValorBruto = document.getElementById('valorBruto');
+    const inputValorDescuento = document.getElementById('valorDescuento');
+    const inputValorIVA = document.getElementById('valorIVA');
+    const inputValorNeto = document.getElementById('valorNeto');
+    const inputEstado = document.getElementById('estadoCotizacion');
+
+    // Agregar detalle (nuevo)
+    const nuevoProductoSelect = document.getElementById('nuevoProducto');
+    const nuevaCantidadInput = document.getElementById('nuevaCantidad');
+    const nuevoPrecioUnitarioInput = document.getElementById('nuevoPrecioUnitario');
+    const nuevoSubtotalInput = document.getElementById('nuevoSubtotal');
+    const addDetailForm = document.getElementById('addDetailForm');
+
+    if (!token) {
+        window.location.href = '/proyectoFinalIS2/co.edu.unbosque.views/login.html';
+    }
+
+    if (!cotizacionId) {
+        alert('ID de cotización no válido');
+        window.location.href = 'cotizacion.html';
+    }
+
+    function setMessage(msg, ok = true) {
+        messageEl.textContent = msg;
+        messageEl.style.color = ok ? 'green' : 'red';
+    }
+
+    // ======= CARGAR COTIZACIÓN (resumen) =======
+    async function fetchCotizacion() {
+        try {
+            const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.cotizacion', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await res.json();
+            if (data.status !== 'success') throw new Error('No se pudieron obtener las cotizaciones');
+
+            const cot = data.data.find(c =>
+                (c.idcotizacion ?? c.idCotizacion) == cotizacionId
+            );
+
+            if (!cot) {
+                alert('No se encontró la cotización');
+                window.location.href = 'cotizacion.html';
+                return;
+            }
+
+            const id = cot.idcotizacion ?? cot.idCotizacion;
+            const idCliente = cot.idcliente ?? cot.idCliente;
+            const idVendedor = cot.idvendedor ?? cot.idVendedor;
+            const fecha = cot.fechacotizacion ?? cot.fechaCotizacion;
+            const valorBruto = cot.valorbruto ?? cot.valorBruto ?? 0;
+            const valorDescuento = cot.valordescuento ?? cot.valorDescuento ?? 0;
+            const valorIVA = cot.valoriva ?? cot.valorIVA ?? 0;
+            const valorNeto = cot.valorneto ?? cot.valorNeto ?? 0;
+            const estadoRaw = cot.estadocotizacion ?? cot.estadoCotizacion ?? 'P';
+
+            let estadoTexto = 'Pendiente';
+            if (estadoRaw === 'A') estadoTexto = 'Aprobada';
+            if (estadoRaw === 'C') estadoTexto = 'Cancelada';
+
+            inputIdCot.value = id;
+            inputIdCliente.value = idCliente;
+            inputIdVendedor.value = idVendedor;
+            inputFechaCot.value = fecha;
+            inputValorBruto.value = valorBruto;
+            inputValorDescuento.value = valorDescuento;
+            inputValorIVA.value = valorIVA;
+            inputValorNeto.value = valorNeto;
+            inputEstado.value = estadoTexto;
+        } catch (err) {
+            console.error(err);
+            setMessage('Error al cargar la cotización', false);
+        }
+    }
+
+    // ======= CARGAR PRODUCTOS PARA NUEVO DETALLE =======
+    async function fetchProductos() {
+        try {
+            const response = await fetch('/proyectoFinalIS2/co.edu.unbosque.elemento', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+
+            if (data.status !== 'success') throw new Error('No se pudieron obtener los productos');
+
+            nuevoProductoSelect.innerHTML = '<option value="">--Seleccione--</option>';
+            data.data.forEach(prod => {
+                const opt = document.createElement('option');
+                const idProd = prod.idelemento ?? prod.idElemento;
+                const precioVenta = prod.precio_venta_ac
+                                    ?? prod.precioventaac
+                                    ?? prod.precioVentaAc
+                                    ?? 0;
+
+                opt.value = idProd;
+                opt.textContent = `${prod.nombre} - $${Number(precioVenta).toFixed(2)}`;
+                opt.dataset.precio = precioVenta;
+
+                nuevoProductoSelect.appendChild(opt);
+            });
+        } catch (err) {
+            console.error(err);
+            setMessage('Error al cargar productos', false);
+        }
+    }
+
+    // Cuando cambie el producto nuevo, llenar precio unitario con precio_venta_ac
+    nuevoProductoSelect.addEventListener('change', () => {
+        const opt = nuevoProductoSelect.options[nuevoProductoSelect.selectedIndex];
+        const precio = parseFloat(opt.dataset.precio || '0');
+
+        if (!isNaN(precio) && precio > 0) {
+            nuevoPrecioUnitarioInput.value = precio.toFixed(2);
+        } else {
+            nuevoPrecioUnitarioInput.value = '';
+        }
+        calcularNuevoSubtotal();
+    });
+
+    // ======= CARGAR DETALLES =======
+    async function fetchDetalles() {
+        try {
+            const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallecotizacion/${cotizacionId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await res.json();
+            console.log('Detalles recibidos:', data);
+
+            if (data.status !== 'success') throw new Error('No se pudieron obtener los detalles');
+
+            renderDetallesTable(data.data);
+        } catch (err) {
+            console.error(err);
+            setMessage('Error al cargar los detalles de la cotización', false);
+        }
+    }
+
+    function renderDetallesTable(detalles) {
+        detallesTBody.innerHTML = '';
+
+        detalles.forEach(det => {
+            const idDetalle = det.iddetallecotizacion ?? det.idDetalleCotizacion;
+            const idProducto = det.idproducto ?? det.idProducto;
+            const cantidad = det.cantidad;
+            const precioUnitario = det.preciounitario ?? det.precioUnitario;
+            const subtotal = det.valorsubtotal ?? det.valorSubtotal;
+
+            const row = detallesTBody.insertRow();
+            row.setAttribute('data-id-detalle', idDetalle);
+
+            row.innerHTML = `
+                <td>${idDetalle}</td>
+                <td>${idProducto}</td>
+                <td><input type="number" class="cantidad-input" value="${cantidad}"></td>
+                <td><input type="number" class="precio-input" value="${precioUnitario}"></td>
+                <td><input type="text" class="subtotal-input readonly" value="${subtotal}" readonly></td>
+                <td>
+                    <button type="button" class="btn-secondary" onclick="actualizarDetalle(${idDetalle})">Actualizar</button>
+                    <button type="button" class="btn-danger" onclick="eliminarDetalle(${idDetalle})">Eliminar</button>
+                </td>
+            `;
+        });
+    }
+
+    // ======= RECALCULAR TOTALES DE LA COTIZACIÓN =======
+    async function recalcCotizacion() {
+        try {
+            const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.cotizacion/edit/${cotizacionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const text = await res.text();
+            console.log('Respuesta recalcular cotización:', text);
+            await fetchCotizacion();
+        } catch (err) {
+            console.error(err);
+            setMessage('Error al recalcular la cotización', false);
+        }
+    }
+
+    // ======= ACTUALIZAR DETALLE =======
+    window.actualizarDetalle = async function(idDetalle) {
+        const row = document.querySelector(`tr[data-id-detalle="${idDetalle}"]`);
+        if (!row) return;
+
+        const cantidadInput = row.querySelector('.cantidad-input');
+        const precioInput = row.querySelector('.precio-input');
+        const subtotalInput = row.querySelector('.subtotal-input');
+
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const precio = parseFloat(precioInput.value) || 0;
+        const subtotal = cantidad * precio;
+        subtotalInput.value = subtotal.toFixed(2);
+
+        const body = {
+            cantidad: cantidad,
+            precioUnitario: precio,
+            valorSubtotal: subtotal
+        };
+
+        try {
+            const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallecotizacion/${idDetalle}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            const text = await res.text();
+            console.log('Respuesta actualizar detalle:', text);
+
+            try {
+                const data = JSON.parse(text);
+                if (data.status === 'success') {
+                    setMessage('Detalle actualizado correctamente');
+                    await recalcCotizacion();
+                    await fetchDetalles();
+                } else {
+                    setMessage('Error al actualizar el detalle', false);
+                }
+            } catch (e) {
+                console.error('Error parseando JSON actualizar detalle:', e);
+                setMessage('Error al procesar la respuesta del servidor', false);
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage('Error de conexión al actualizar detalle', false);
+        }
+    };
+
+    // ======= ELIMINAR DETALLE =======
+    window.eliminarDetalle = async function(idDetalle) {
+        if (!confirm('¿Seguro que deseas eliminar este detalle?')) return;
+
+        try {
+            const res = await fetch(`/proyectoFinalIS2/co.edu.unbosque.detallecotizacion/${idDetalle}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const text = await res.text();
+            console.log('Respuesta eliminar detalle:', text);
+
+            try {
+                const data = JSON.parse(text);
+                if (data.status === 'success') {
+                    setMessage('Detalle eliminado correctamente');
+                    await recalcCotizacion();
+                    await fetchDetalles();
+                } else {
+                    setMessage('Error al eliminar el detalle', false);
+                }
+            } catch (e) {
+                console.error('Error parseando JSON eliminar detalle:', e);
+                setMessage('Error al procesar la respuesta del servidor', false);
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage('Error de conexión al eliminar detalle', false);
+        }
+    };
+
+    // ======= NUEVO DETALLE: calcular subtotal =======
+    function calcularNuevoSubtotal() {
+        const c = parseFloat(nuevaCantidadInput.value) || 0;
+        const p = parseFloat(nuevoPrecioUnitarioInput.value) || 0;
+        const sub = c * p;
+        nuevoSubtotalInput.value = sub.toFixed(2);
+    }
+
+    nuevaCantidadInput.addEventListener('input', calcularNuevoSubtotal);
+    nuevoPrecioUnitarioInput.addEventListener('input', calcularNuevoSubtotal);
+
+    // ======= NUEVO DETALLE: enviar =======
+    addDetailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const idProducto = nuevoProductoSelect.value;
+        const cantidad = parseFloat(nuevaCantidadInput.value) || 0;
+        const precio = parseFloat(nuevoPrecioUnitarioInput.value) || 0;
+        const subtotal = cantidad * precio;
+
+        if (!idProducto) {
+            setMessage('Seleccione un producto', false);
+            return;
+        }
+        if (cantidad <= 0 || precio <= 0) {
+            setMessage('Cantidad y precio deben ser mayores que cero', false);
+            return;
+        }
+
+        const body = {
+            idCotizacion: cotizacionId,
+            idProducto: idProducto,
+            cantidad: cantidad,
+            precioUnitario: precio,
+            valorSubtotal: subtotal
+        };
+
+        try {
+            const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.detallecotizacion', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            const text = await res.text();
+            console.log('Respuesta agregar detalle:', text);
+
+            try {
+                const data = JSON.parse(text);
+                if (data.status === 'success') {
+                    setMessage('Detalle agregado correctamente');
+                    nuevaCantidadInput.value = '';
+                    nuevoPrecioUnitarioInput.value = '';
+                    nuevoSubtotalInput.value = '';
+                    nuevoProductoSelect.value = '';
+
+                    await recalcCotizacion();
+                    await fetchDetalles();
+                } else {
+                    setMessage('Error al agregar el detalle', false);
+                }
+            } catch (e) {
+                console.error('Error parseando JSON agregar detalle:', e);
+                setMessage('Error al procesar la respuesta del servidor', false);
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage('Error de conexión al agregar detalle', false);
+        }
+    });
+
+    // ======= INIT =======
+    (async function init() {
+        await fetchCotizacion();
+        await fetchProductos();
+        await fetchDetalles();
+    })();
+</script>
+</body>
+</html>

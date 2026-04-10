@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial / Auditoría del sistema</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .filters label {
+            font-size: 14px;
+            margin-right: 5px;
+        }
+
+        .filters input,
+        .filters select {
+            padding: 4px 6px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .estado-pill {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #fff;
+            display: inline-block;
+        }
+
+        .accion-I {
+            background-color: #28a745; /* Insertar */
+        }
+
+        .accion-U {
+            background-color: #007bff; /* Actualizar */
+        }
+
+        .accion-D {
+            background-color: #dc3545; /* Eliminar */
+        }
+
+        .small-text {
+            font-size: 12px;
+            color: #555;
+        }
+
+        #message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .scroll-container {
+            max-height: 430px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scroll-container::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 4px;
+        }
+        .scroll-container::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div>
+            <h1>Historial / Auditoría del sistema</h1>
+            <p class="small-text">
+                Solo los usuarios con rol <strong>Administrador</strong> pueden ver esta sección.
+            </p>
+        </div>
+        <div>
+            <button onclick="window.location.href='dashboard.html'">Volver al Dashboard</button>
+        </div>
+    </div>
+
+    <div class="filters">
+        <div>
+            <label for="usuarioFilter">Usuario:</label>
+            <select id="usuarioFilter">
+                <option value="">Todos</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="accionFilter">Acción:</label>
+            <select id="accionFilter">
+                <option value="">Todas</option>
+                <option value="I">Insertar</option>
+                <option value="U">Actualizar</option>
+                <option value="D">Eliminar</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="fechaDesde">Desde:</label>
+            <input type="date" id="fechaDesde">
+        </div>
+
+        <div>
+            <label for="fechaHasta">Hasta:</label>
+            <input type="date" id="fechaHasta">
+        </div>
+
+        <div>
+            <button id="btnFiltrar">Filtrar</button>
+            <button id="btnLimpiar">Limpiar filtros</button>
+        </div>
+    </div>
+
+    <div class="scroll-container">
+        <table id="tablaAuditoria">
+            <thead>
+                <tr>
+                    <th>Fecha / hora</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Se llena con JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <p id="message"></p>
+
+    <script>
+        const token  = localStorage.getItem('authToken');
+        const roleId = localStorage.getItem('roleId');
+        const tablaBody      = document.querySelector('#tablaAuditoria tbody');
+        const usuarioFilter  = document.getElementById('usuarioFilter');
+        const accionFilter   = document.getElementById('accionFilter');
+        const fechaDesdeInput= document.getElementById('fechaDesde');
+        const fechaHastaInput= document.getElementById('fechaHasta');
+        const btnFiltrar     = document.getElementById('btnFiltrar');
+        const btnLimpiar     = document.getElementById('btnLimpiar');
+        const messageEl      = document.getElementById('message');
+
+        let auditoriaData = [];
+
+        // Solo admin puede ver esto
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+        if (roleId !== '1') { // no admin
+            alert('No tienes permisos para ver la auditoría.');
+            window.location.href = 'dashboard.html';
+        }
+
+        function mapAccionTexto(cod) {
+            if (cod === 'I') return 'Insertar';
+            if (cod === 'U') return 'Actualizar';
+            if (cod === 'D') return 'Eliminar';
+            return cod || '';
+        }
+
+        function renderTabla(data) {
+            tablaBody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                const row = tablaBody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 4;
+                cell.textContent = 'No hay registros que coincidan con los filtros.';
+                cell.style.textAlign = 'center';
+                return;
+            }
+
+            data.forEach(row => {
+                const tr = tablaBody.insertRow();
+
+                const fecha = row.fcha_auditoria || row.fchaAuditoria || row.fecha || '';
+                const usuario = row.username || row.usuario || ('ID ' + (row.usuario_auditoria ?? row.usuarioAuditoria));
+                const accionCod = row.accion_auditoria || row.accionAuditoria || '';
+                const desc = row.descripcion_accion || row.descripcionAccion || '';
+
+                const tdFecha   = tr.insertCell();
+                const tdUsuario = tr.insertCell();
+                const tdAccion  = tr.insertCell();
+                const tdDesc    = tr.insertCell();
+
+                tdFecha.textContent   = fecha;
+                tdUsuario.textContent = usuario;
+
+                const span = document.createElement('span');
+                span.textContent = mapAccionTexto(accionCod);
+                span.classList.add('estado-pill', 'accion-' + (accionCod || '').toUpperCase());
+                tdAccion.appendChild(span);
+
+                tdDesc.textContent = desc;
+            });
+        }
+
+        function aplicarFiltros() {
+            let filtrado = [...auditoriaData];
+
+            const usuarioSel = usuarioFilter.value;
+            const accionSel  = accionFilter.value;
+            const desde      = fechaDesdeInput.value;
+            const hasta      = fechaHastaInput.value;
+
+            if (usuarioSel) {
+                filtrado = filtrado.filter(r => {
+                    const uid = String(r.usuario_auditoria ?? r.usuarioAuditoria ?? '');
+                    return uid === usuarioSel;
+                });
+            }
+
+            if (accionSel) {
+                filtrado = filtrado.filter(r => {
+                    const a = (r.accion_auditoria ?? r.accionAuditoria ?? '').toUpperCase();
+                    return a === accionSel;
+                });
+            }
+
+            if (desde) {
+                filtrado = filtrado.filter(r => {
+                    const f = (r.fcha_auditoria ?? r.fchaAuditoria ?? '').substring(0,10);
+                    return f >= desde;
+                });
+            }
+
+            if (hasta) {
+                filtrado = filtrado.filter(r => {
+                    const f = (r.fcha_auditoria ?? r.fchaAuditoria ?? '').substring(0,10);
+                    return f <= hasta;
+                });
+            }
+
+            renderTabla(filtrado);
+        }
+
+        async function fetchAuditoria() {
+    try {
+        const res = await fetch('/proyectoFinalIS2/co.edu.unbosque.auditoria', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // 1) Leer respuesta como texto bruto y mostrarla en consola
+        const raw = await res.text();
+        console.log('Respuesta auditoría RAW:', raw);
+
+        // 2) Intentar parsear como JSON
+        let data;
+        try {
+            data = JSON.parse(raw);
+            console.log('Respuesta auditoría JSON:', data);
+        } catch (e) {
+            console.error('No es JSON válido:', e);
+            messageEl.style.color = 'red';
+            messageEl.textContent = 'Respuesta del servidor no es JSON válido.';
+            return;
+        }
+
+        // 3) Verificar status
+        if (data.status !== 'success') {
+            console.error('Detalles del error de auditoría:', data.error_details || data.message);
+            throw new Error(data.message || 'Error al obtener la auditoría');
+        }
+
+        // 4) Si todo bien, pintar tabla
+        auditoriaData = Array.isArray(data.data) ? data.data : [];
+
+        // Llenar filtro de usuarios
+        const usuariosUnicos = new Map();
+        auditoriaData.forEach(r => {
+            const idU = String(r.usuario_auditoria ?? r.usuarioAuditoria ?? '');
+            const username = r.username || ('ID ' + idU);
+            if (idU && !usuariosUnicos.has(idU)) {
+                usuariosUnicos.set(idU, username);
+            }
+        });
+
+        usuarioFilter.innerHTML = '<option value="">Todos</option>';
+        usuariosUnicos.forEach((nombre, id) => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = `${nombre} (ID ${id})`;
+            usuarioFilter.appendChild(opt);
+        });
+
+        renderTabla(auditoriaData);
+
+    } catch (err) {
+        console.error(err);
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Error al cargar la auditoría.';
+    }
+}
+
+
+        btnFiltrar.addEventListener('click', aplicarFiltros);
+
+        btnLimpiar.addEventListener('click', () => {
+            usuarioFilter.value = '';
+            accionFilter.value  = '';
+            fechaDesdeInput.value = '';
+            fechaHastaInput.value = '';
+            renderTabla(auditoriaData);
+        });
+
+        (async () => {
+            await fetchAuditoria();
+        })();
+    </script>
+</body>
+</html>
