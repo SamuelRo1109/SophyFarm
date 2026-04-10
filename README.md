@@ -142,21 +142,16 @@ http://localhost/proyectoFinalIS2/co.edu.unbosque.views/login.html
 
 ##  Validación funcionamiento del sistema
 
-<p align="center">
-  <img src="screenshots/login.jpeg" width="45%" title="Login"/>
-  <img src="screenshots/crear_cotizacion.jpeg" width="45%" title="Crear Cotización"/>
-</p>
-<p align="center">
-  <img src="screenshots/crear_cliente.jpeg" width="45%" title="Crear Cliente"/>
-  <img src="screenshots/crear_cotizacion_cliente.jpeg" width="45%" title="Cotización por Cliente"/>
-</p>
-<p align="center">
-  <img src="screenshots/reportes.jpeg" width="45%" title="Reportes"/>
-  <img src="screenshots/auditoria.jpeg" width="45%" title="Auditoría"/>
-</p>
+| | |
+|:---:|:---:|
+| ![Login](screenshots/login.jpeg) | ![Crear Cotización](screenshots/crear_cotizacion.jpeg) |
+| 🔐 Login | 📋 Crear Cotización |
+| ![Crear Cliente](screenshots/crear_cliente.jpeg) | ![Cotización por Cliente](screenshots/crear_cotizacion_cliente.jpeg) |
+| 👤 Crear Cliente | 🛒 Cotización por Cliente |
+| ![Reportes](screenshots/reportes.jpeg) | ![Auditoría](screenshots/auditoria.jpeg) |
+| 📊 Reportes | 🔍 Auditoría |
 
 ---
-
 ## Documentación
 
 El repositorio incluye documentación completa del proyecto:
