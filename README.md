@@ -145,11 +145,11 @@ http://localhost/proyectoFinalIS2/co.edu.unbosque.views/login.html
 | | |
 |:---:|:---:|
 | ![Login](screenshots/login.jpeg) | ![Crear Cotización](screenshots/crear_cotizacion.jpeg) |
-| 🔐 Login | 📋 Crear Cotización |
+| Login | Crear Cotización |
 | ![Crear Cliente](screenshots/crear_cliente.jpeg) | ![Cotización por Cliente](screenshots/crear_cotizacion_cliente.jpeg) |
-| 👤 Crear Cliente | 🛒 Cotización por Cliente |
+| Crear Cliente | Cotización por Cliente |
 | ![Reportes](screenshots/reportes.jpeg) | ![Auditoría](screenshots/auditoria.jpeg) |
-| 📊 Reportes | 🔍 Auditoría |
+| Reportes | Auditoría |
 
 ---
 ## Documentación
