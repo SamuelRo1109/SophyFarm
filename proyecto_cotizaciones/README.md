@@ -1,4 +1,4 @@
-<h1 align="center">🌿 SophyFarm — Sistema de Gestión de Cotizaciones y Pedidos</h1>
+<h1 align="center">SophyFarm — Sistema de Gestión de Cotizaciones y Pedidos</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Estado-Completado-brightgreen?style=for-the-badge"/>
@@ -14,28 +14,28 @@
 
 ---
 
-## 📋 Descripción
+## Descripción
 
-**SophyFarm** es un sistema de gestión de cotizaciones y pedidos desarrollado para una cadena local de droguerías. Permite a vendedores y administradores gestionar el ciclo comercial completo: desde la generación de cotizaciones personalizadas hasta su conversión en pedidos con seguimiento en tiempo real.
+SophyFarm es un sistema de gestión de cotizaciones y pedidos desarrollado para una cadena local de droguerías. Permite a vendedores y administradores gestionar el ciclo comercial completo: desde la generación de cotizaciones personalizadas hasta su conversión en pedidos con seguimiento en tiempo real.
 
 El sistema está construido sobre una **arquitectura de microservicios** donde cada servicio es independiente, escalable y se comunica a través de **APIs REST**. La autenticación y el control de acceso se implementaron con **JWT (JSON Web Tokens)**.
 
 ---
 
-## 🚀 Funcionalidades principales
+## Funcionalidades principales
 
-- ✅ Creación, edición y seguimiento de **cotizaciones** por vendedor
-- ✅ Conversión de cotizaciones aceptadas en **pedidos** con estados (Pendiente / Confirmado / Cancelado)
-- ✅ Gestión de **clientes** y su historial comercial
-- ✅ Catálogo de **productos** disponibles para cotizar
-- ✅ **Notificaciones automáticas** por correo electrónico y WhatsApp al confirmar pedidos
-- ✅ Generación de **reportes PDF** de ventas y estadísticas
-- ✅ Panel de **auditoría** para el administrador
-- ✅ Autenticación segura con **JWT** y control de acceso por rol
+- Creación, edición y seguimiento de **cotizaciones** por vendedor
+- Conversión de cotizaciones aceptadas en **pedidos** con estados (Pendiente / Confirmado / Cancelado)
+- Gestión de **clientes** y su historial comercial
+- Catálogo de **productos** disponibles para cotizar
+- **Notificaciones automáticas** por correo electrónico y WhatsApp al confirmar pedidos
+- Generación de **reportes PDF** de ventas y estadísticas
+- Panel de **auditoría** para el administrador
+- Autenticación segura con **JWT** y control de acceso por rol
 
 ---
 
-## 🛠️ Stack tecnológico
+## Stack tecnológico
 
 | Capa | Tecnología |
 |------|------------|
@@ -50,7 +50,7 @@ El sistema está construido sobre una **arquitectura de microservicios** donde c
 
 ---
 
-## 🏗️ Arquitectura del sistema
+## Arquitectura del sistema
 
 El proyecto está dividido en los siguientes microservicios independientes:
 
@@ -68,7 +68,7 @@ Todos los microservicios se conectan a una base de datos **PostgreSQL** centrali
 
 ---
 
-## 👥 Roles de usuario
+## Roles de usuario
 
 | Rol | Acceso |
 |-----|--------|
@@ -78,7 +78,7 @@ Todos los microservicios se conectan a una base de datos **PostgreSQL** centrali
 
 ---
 
-## ⚙️ Instalación y configuración local
+## Instalación y configuración local
 
 ### Requisitos previos
 
@@ -100,7 +100,7 @@ cd sophyfarm
 Edita el archivo `DbConfig.php` con los parámetros de tu instancia de PostgreSQL:
 
 ```php
-define('DB_HOST', '192.168.1.12');   // IP de tu máquina virtual Debian
+define('DB_HOST', '192.168.1.12');   // Aquí, ingresa la IP de tu máquina virtual Debian
 define('DB_NAME', 'sophyfarm');
 define('DB_USER', 'postgres');
 define('DB_PASS', '1234');
@@ -140,40 +140,50 @@ http://localhost/proyectoFinalIS2/co.edu.unbosque.views/login.html
 
 ---
 
-## 📸 Capturas del sistema
+## Capturas del sistema
 
-> *Próximamente — screenshots del flujo de cotización, pedidos y panel administrativo.*
+### 🔐 Login
+![Login](screenshots/login.jpeg)
 
-<!-- Una vez tengas las imágenes, súbelas a una carpeta /screenshots dentro del repo y reemplaza esta sección así:
-![Login](screenshots/login.png)
-![Cotizaciones](screenshots/cotizaciones.png)
-![Pedidos](screenshots/pedidos.png)
--->
+### 📋 Crear Cotización
+![Crear Cotización](screenshots/crear_cotizacion.jpeg)
+
+### 👤 Crear Cliente
+![Crear Cliente](screenshots/crear_cliente.jpeg)
+
+### 🛒 Cotización por Cliente
+![Cotización por Cliente](screenshots/crear_cotizacion_cliente.jpeg)
+
+### 📊 Reportes
+![Reportes](screenshots/reportes.jpeg)
+
+### 🔍 Auditoría
+![Auditoría](screenshots/auditoria.jpeg)
 
 ---
 
-## 📄 Documentación
+## Documentación
 
 El repositorio incluye documentación completa del proyecto:
 
-- 📘 `docs/manual-usuario.pdf` — Manual de usuario con flujos detallados por rol
-- 📗 `docs/manual-vm.pdf` — Guía de configuración de la máquina virtual Debian 11 + PostgreSQL
+- `docs\proyecto_cotizaciones\docs\ManualInstalaciónYDespliegueMV(CotizacionesYPedidos).txt` — Manual de usuario con flujos detallados por rol
+- `docs\manual-vm.pdf` — Guía de configuración de la máquina virtual Debian 11 + PostgreSQL
 
 ---
 
-## 👨‍💻 Equipo de desarrollo
+## Equipo de desarrollo
 
 | Nombre | GitHub |
 |--------|--------|
-| Samuel Julián Rodríguez Chávez | [@SamuelRol1109](https://github.com/SamuelRol1109) |
+| Samuel Julián Rodríguez Chávez | [@SamuelRo1109](https://github.com/SamuelRo1109) |
 | Natalia Vanesa Martínez Rodríguez | — |
 | Abraham Pesca Prada | — |
 
 ---
 
-## 📬 Contacto
+## Contacto
 
 **Samuel Rodríguez**
-- 📧 sjurodriguez@gmail.com
-- 💼 [LinkedIn](https://www.linkedin.com/in/samuel-rodriguez-b720a73b5/)
-- 🐙 [GitHub](https://github.com/SamuelRol1109)
+- sjurodriguez@gmail.com
+- [LinkedIn](https://www.linkedin.com/in/samuel-rodriguez-b720a73b5/)
+- [GitHub](https://github.com/SamuelRo1109)

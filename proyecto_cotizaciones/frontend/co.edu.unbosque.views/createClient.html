@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cliente</title>
+    <link rel="stylesheet" href="../co.edu.unbosque.css/style.css">
+</head>
+<body>
+    <h1>Crear Cliente</h1>
+    
+    <!-- Formulario para crear cliente -->
+    <form id="createClientForm">
+        <!-- Tipo de Cliente -->
+        <label for="tipoCliente">Tipo de Cliente:</label>
+        <select id="tipoCliente" name="tipoCliente" required>
+            <option value="">Selecciona Tipo de Cliente</option>
+            <option value="1">Cliente Natural</option>
+            <option value="2">Empresa</option>
+        </select>
+
+        <!-- Campos para Cliente Natural -->
+        <div id="clienteNaturalFields" style="display: none;">
+            <label for="primerNombre">Primer Nombre:</label>
+            <input type="text" id="primerNombre" name="primerNombre">
+            
+            <label for="segundoNombre">Segundo Nombre:</label>
+            <input type="text" id="segundoNombre" name="segundoNombre">
+            
+            <label for="primerApellido">Primer Apellido:</label>
+            <input type="text" id="primerApellido" name="primerApellido">
+            
+            <label for="segundoApellido">Segundo Apellido:</label>
+            <input type="text" id="segundoApellido" name="segundoApellido">
+        </div>
+
+        <!-- Campos para Empresa -->
+        <div id="empresaFields" style="display: none;">
+            <label for="razonSocial">Razón Social (solo para empresas):</label>
+            <input type="text" id="razonSocial" name="razonSocial">
+        </div>
+
+        <label for="tipoDocumento">Tipo de Documento:</label>
+        <select id="tipoDocumento" name="tipoDocumento" required>
+            <option value="">Selecciona Tipo de Documento</option>
+            <option value="1">Cédula de Ciudadanía</option>
+            <option value="2">NIT</option>
+        </select>
+
+        <label for="numeroDocumento">Número de Documento:</label>
+        <input type="text" id="numeroDocumento" name="numeroDocumento" required>
+        
+        <label for="telefono">Teléfono:</label>
+        <input type="text" id="telefono" name="telefono" required>
+        
+        <label for="correo">Correo:</label>
+        <input type="email" id="correo" name="correo" required>
+
+        <label for="direccion">Dirección:</label>
+        <input type="text" id="direccion" name="direccion" required>
+
+        <label for="saldoActual">Saldo Actual:</label>
+        <input type="number" id="saldoActual" name="saldoActual" required>
+
+        <label for="cupoCredito">Cupo de Crédito:</label>
+        <input type="number" id="cupoCredito" name="cupoCredito" required>
+
+        <button type="submit">Crear Cliente</button>
+    </form>
+
+    <script src="../co.edu.unbosque.js/app.js"></script>
+    <script>
+        // Mostrar u ocultar campos según el tipo de cliente
+        document.getElementById('tipoCliente').addEventListener('change', function() {
+            const tipoCliente = this.value;
+            if (tipoCliente === '2') {  // Si es Empresa
+                document.getElementById('clienteNaturalFields').style.display = 'none'; // Ocultar campos de Cliente Natural
+                document.getElementById('empresaFields').style.display = 'block'; // Mostrar campos de Empresa
+            } else {  // Si es Cliente Natural
+                document.getElementById('clienteNaturalFields').style.display = 'block'; // Mostrar campos de Cliente Natural
+                document.getElementById('empresaFields').style.display = 'none'; // Ocultar campos de Empresa
+            }
+        });
+
+        // Lógica para manejar la creación de un nuevo cliente
+        document.getElementById('createClientForm').addEventListener('submit', function(event) {
+            event.preventDefault();  // Prevenir el envío por defecto del formulario
+
+            // Obtener los valores del formulario
+            const tipoCliente = document.getElementById('tipoCliente').value;
+            const tipoDocumento = document.getElementById('tipoDocumento').value;
+            const numeroDocumento = document.getElementById('numeroDocumento').value;
+            const telefono = document.getElementById('telefono').value;
+            const correo = document.getElementById('correo').value;
+            const direccion = document.getElementById('direccion').value;
+            const saldoActual = document.getElementById('saldoActual').value;
+            const cupoCredito = document.getElementById('cupoCredito').value;
+            const razonSocial = document.getElementById('razonSocial').value; // Para empresas
+            const primerNombre = document.getElementById('primerNombre').value; // Para cliente natural
+            const segundoNombre = document.getElementById('segundoNombre').value; // Para cliente natural
+            const primerApellido = document.getElementById('primerApellido').value; // Para cliente natural
+            const segundoApellido = document.getElementById('segundoApellido').value; // Para cliente natural
+
+            // Enviar los datos al backend
+            fetch('http://localhost/proyecto_cotizaciones_microservicios/backend/clientes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tipoCliente,
+                    tipoDocumento,
+                    numeroDocumento,
+                    telefono,
+                    correo,
+                    direccion,
+                    saldoActual,
+                    cupoCredito,
+                    razonSocial: tipoCliente === '2' ? razonSocial : null,  // Solo enviar razón social si es empresa
+                    primerNombre: tipoCliente === '1' ? primerNombre : null, // Solo enviar los nombres si es cliente natural
+                    segundoNombre: tipoCliente === '1' ? segundoNombre : null,
+                    primerApellido: tipoCliente === '1' ? primerApellido : null,
+                    segundoApellido: tipoCliente === '1' ? segundoApellido : null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Verificar la respuesta del backend
+                if (data.message === 'Cliente creado exitosamente') {
+                    alert('Cliente creado exitosamente');
+                    window.location.href = 'dashboard.php';  // Redirigir al dashboard
+                } else {
+                    alert('Error al crear cliente');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
