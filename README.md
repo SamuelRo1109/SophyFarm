@@ -157,7 +157,8 @@ http://localhost/proyectoFinalIS2/co.edu.unbosque.views/login.html
 El repositorio incluye documentación completa del proyecto:
 
 - `docs\proyecto_cotizaciones\docs\ManualInstalaciónYDespliegueMV(CotizacionesYPedidos).txt` — Manual de usuario con flujos detallados por rol
-- `docs\manual-vm.pdf` — Guía de configuración de la máquina virtual Debian 11 + PostgreSQL
+- `docs\ManualUsuarioSophyFarm(CotizacionesYPedidos).txt` — Guía de configuración de la máquina virtual Debian 11 + PostgreSQL
+- - `docs\InformeProyecto.pdf` — Informe final, con el proceso completo detallado del desarrollo completo del proyecto.
 
 ---
 
