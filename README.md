@@ -64,7 +64,7 @@ SophyFarm/
 └── ms-notificacion/     → Notificaciones por email y WhatsApp
 ```
 
-Todos los microservicios se conectan a una base de datos **PostgreSQL** centralizada y se comunican entre sí mediante **API REST**.
+Todos los microservicios se conectan a una base de datos PostgreSQL centralizada y se comunican entre sí mediante API REST.
 
 ---
 
@@ -140,25 +140,20 @@ http://localhost/proyectoFinalIS2/co.edu.unbosque.views/login.html
 
 ---
 
-## Capturas del sistema
+##  Validación funcionamiento del sistema
 
-### 🔐 Login
-![Login](screenshots/login.jpeg)
-
-### 📋 Crear Cotización
-![Crear Cotización](screenshots/crear_cotizacion.jpeg)
-
-### 👤 Crear Cliente
-![Crear Cliente](screenshots/crear_cliente.jpeg)
-
-### 🛒 Cotización por Cliente
-![Cotización por Cliente](screenshots/crear_cotizacion_cliente.jpeg)
-
-### 📊 Reportes
-![Reportes](screenshots/reportes.jpeg)
-
-### 🔍 Auditoría
-![Auditoría](screenshots/auditoria.jpeg)
+<p align="center">
+  <img src="screenshots/login.jpeg" width="45%" title="Login"/>
+  <img src="screenshots/crear_cotizacion.jpeg" width="45%" title="Crear Cotización"/>
+</p>
+<p align="center">
+  <img src="screenshots/crear_cliente.jpeg" width="45%" title="Crear Cliente"/>
+  <img src="screenshots/crear_cotizacion_cliente.jpeg" width="45%" title="Cotización por Cliente"/>
+</p>
+<p align="center">
+  <img src="screenshots/reportes.jpeg" width="45%" title="Reportes"/>
+  <img src="screenshots/auditoria.jpeg" width="45%" title="Auditoría"/>
+</p>
 
 ---
 
